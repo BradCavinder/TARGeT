@@ -1,0 +1,44 @@
+
+TARGeT Command Line Release Notes
+
+Description
+===========
+This is the command line implementation of TARGeT: Tree Analysis of Related Genes and Transposons (http://target.iplantcollaborative.org/). It consists of a Python wrapper script that manages the program options and makes operating system calls to run TARGeT perl scripts, third party programs, and system commands. 
+
+The Nucleic Acids Research article (Han, Burnette, and Wessler, 2009; http://nar.oxfordjournals.org/content/37/11/e78.abstract?keytype=ref&ijkey=kxWPUWbTKc8c2wl) describes the web version and underlying perl scripts in detail. Differences between this command line implementation and the web based version are described in the changelog section below. The Python wrapper script was written by Brad Cavinder.
+
+
+Dependencies
+============
+TARGeT has only been tested on Linux operating systems. Use with other operating systems (especially Windows OSs) will likely require you to modify the Python script at a minimum. You are on your own with that endeavor. 
+
+The following are required for TARGeT to run and must be in your PATH (i.e. must be callable from any directory without giving an absolute or relative path to the programs). Additionally, only the versions listed have been tested. Newer or older versions may or may not work.
+
+  Programs:
+   Python - 2.7.2
+   Perl - 5.12.4
+   NCBI BLAST2 - 2.2.26 (note: the newer BLAST+ will not currently work with TARGeT)
+   ImageMagick - 6.6.0-4
+   MUSCLE - 3.8.31
+   TreeBest - 1.9.2
+
+  Python packages:
+   setuptools - 0.6c11 (needed to install pyfasta)
+   pyfasta - 0.4.5 (note: to handle the default output files of other programs that include spaces and/or special charaters in FASTA headers, modification of pyfasta's fasta.py file has been made and is included here as fasta_edit.py in the rsrc folder. You will either need to backup and replace the default fasta.py file (in the pyfasta-0.4.5/pyfasta/ folder) with fasta_edit.py [copied and renamed to fasta.py] before pyfasta installation or come up with your own solution to remove or change spaces and special charaters in FASTA headers, if present)
+
+
+Installation
+============
+TARGeT itself does not require installation as it consists of Python and Perl scripts that do not need to be compiled or installed. The dependencies above do need to be installed per each program's own instructions, adding them to your PATH manually if needed. TARGeT needs to be run from its own directory, containing the Python and Perl scripts and the BLOSUM matrix files.
+
+
+Change Log
+==========
+
+1.00 - 15APR2012 - Initial release
+
+   Differeces from the web version:
+    - This version does not yet allow the use of other BLAST options that the web interface allows. Similarly, the -diags option for MUSCLE must currently always be used and the -clwstrict option cannot be used. Other options not implemented in the web version are not implemented here either.
+    - Improved the readability of tree images containing high numbers of homologs by increasing the height of the images based on homolog count.
+    - The web version allows TARGeT to be stopped after any of the BLAST, PHI, or MUSCLE steps in addition to running the full pipeline. This version only runs the complete pipeline though it will check to see if the BLAST database and custom index files have already been created, skipping either or both steps if they have. It will also check to see if the number of homolgs found by PHI is >1. If not, MUSCLE and TreeBest will not be run.
+    - The web version allowed the use of only the BLOSUM62 scoring matrix. You may choose from BLOSUM50, BLOSUM62, and BLOSUM80 with this version.
