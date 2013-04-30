@@ -149,17 +149,15 @@ def runTarget(query, blast_out, blast_file_out):
                         seq1 += 1
                     elif '.flank' in in_path:
                         seq2 += 1
-            in_list.append(out_file)
+            in_list.append(out_path)
             in_file.close()
             out_file.close()
     else:
         for in_path in in_list:
-            in_file = open(in_path, "r")
-            for title, seq in fastaIO.FastaGeneralIterator(in_file):
-                if '.dna' in in_path:
-                    seq3 += 1
-                elif '.flank' in in_path:
-                    seq4 += 1
+            if '.dna' in in_path:
+                seq3 += 1
+            elif '.flank' in in_path:
+                seq4 += 1
 
     if seq1 > 1 or seq2 > 1 or seq3 > 1 or seq4 > 1:
 
@@ -175,9 +173,10 @@ def runTarget(query, blast_out, blast_file_out):
 
         #Run Muscle
         for in_path in in_list:
-            in_file = open(in_path, "r")
+            print in_path + "\n"
+            in_file2 = open(in_path, "r")
             copy_count = 0
-            for title, seq in fastaIO.FastaGeneralIterator(in_file):
+            for title, seq in fastaIO.FastaGeneralIterator(in_file2):
                 copy_count += 1
             print str(copy_count) + " copies in " + in_path
             muscle_out = in_path + ".msa"
@@ -277,7 +276,7 @@ parser_muscle = parser.add_argument_group("Muscle")
 
 parser_muscle.add_argument("-m_m", metavar="Max alignment iterations", type=int, default=8, help="Maximum number of alignment iterations.")
 
-parser_muscle.add_argument("-m_d", metavar="Find diagonals", choices=('diags', ''), default="", help="Find diagonals (faster for similar sequences)")
+parser_muscle.add_argument("-m_d", metavar="Find diagonals", choices=('diags', ''), default='diags', help="Find diagonals (faster for similar sequences)")
 
 parser_muscle.add_argument("-m_g", metavar="Grouping", choices=('group', 'input'), default="group", help="Output sequences in input or group (by similarity) order.")
 
@@ -302,6 +301,13 @@ if args.p_p == 'False':
     args.p_p = '0'
 else:
     args.p_p = '1'
+m_args = ''
+if args.m_d == 'diags':
+    m_args = "-diags"
+if args.m_g == 'input':
+    m_args = m_args + "-input"
+if args.m_c == 'True':
+    m_args = m_args + "-clwstrict"
 
 #limit the number of homologs to be drawn by PHI drawer but allow more for other steps
 num_hom = args.p_n    
