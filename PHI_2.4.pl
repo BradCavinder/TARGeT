@@ -1,4 +1,5 @@
-#!/usr/local/bin/perl -w
+#!/usr/bin/env perl
+use warnings
 # 2010-9-8
 # }elsif($Line=~ /Expect\(\d\)\s+=\s+(\S+)/){ => }elsif($Line=~ /Expect\(\d+\)\s+=\s+(\S+)/){
 

@@ -1,4 +1,5 @@
-#!/usr/local/bin/perl -w
+#!/usr/bin/perl -w
+use warnings;
 # build the reads index file 
 # Written by prj03
 # 29/10/102

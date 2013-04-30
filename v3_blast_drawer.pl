@@ -1,4 +1,5 @@
-#!/usr/local/bin/perl -w
+#!/usr/bin/perl -w
+use warnings;
 # Yujun Han
 #-----------------------------------------------------
 use Getopt::Std;
@@ -285,3 +286,4 @@ sub SVG_texter {
 	print(OF '</text>');
 	print(OF "\n");
 }
+
