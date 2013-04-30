@@ -1,4 +1,6 @@
-#!/usr/local/bin/perl -w
+#!/usr/bin/perl -w
+use warnings;
+
 # Yujun Han
 # The difference from version 2 to 1 is 2 can detect frameshift. 
 # Note the input file is also different for the additional frameshift information
