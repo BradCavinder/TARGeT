@@ -52,7 +52,7 @@ def BLASTN(query, blast_file_out):
     subp.call(["blastall", "-p", "blastn", "-d", str(args.genome), "-i", query, "-o", str(blast_file_out) + ".blast", "-e", str(args.b_e), "-b", str(args.b_a), "-v", str(args.b_d), "-a", str(args.b_p)])
 
 def TBLASTN(query, blast_file_out):
-    subp.call(["blastall", "-p", "tblastn", "-d", str(args.genome), "-i", query, "-o", str(blast_file_out) + ".blast", "-e", str(args.b_e), + "-b", str(args.b_a), "-v", str(args.b_d), "-a", str(args.b_p)])
+    subp.call(["blastall", "-p", "tblastn", "-d", str(args.genome), "-i", query, "-o", str(blast_file_out) + ".blast", "-e", str(args.b_e), "-b", str(args.b_a), "-v", str(args.b_d), "-a", str(args.b_p)])
 
 def Blast_draw(blast_file_out):
     subp.call(["perl", path + "v3_blast_drawer.pl", "-i", str(blast_file_out) + ".blast", "-o", str(blast_file_out)])
