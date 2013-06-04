@@ -52,7 +52,7 @@ def BLASTN(query, blast_file_out):
     subp.call(["blastall", "-p", "blastn", "-d", str(args.genome), "-i", query, "-o", str(blast_file_out) + ".blast", "-e", str(args.b_e), "-b", str(args.b_a), "-v", str(args.b_d), "-a", str(args.b_p)])
 
 def TBLASTN(query, blast_file_out):
-    subp.call(["blastall", "-p", "tblastn", "-d", str(args.genome), "-i", query, "-o", str(blast_file_out) + ".blast", "-e", str(args.b_e), "-b", str(args.b_a), "-v", str(args.b_d), "-a", str(args.b_p)])
+    subp.call(["blastall", "-p", "tblastn", "-F", "F", "-m", "0", "-d", str(args.genome), "-i", query, "-o", str(blast_file_out) + ".blast", "-e", str(args.b_e), "-b", str(args.b_a), "-v", str(args.b_d), "-a", str(args.b_p)])
 
 def Blast_draw(blast_file_out):
     subp.call(["perl", path + "v3_blast_drawer.pl", "-i", str(blast_file_out) + ".blast", "-o", str(blast_file_out)])
@@ -112,54 +112,53 @@ def runTarget(query, blast_out, blast_file_out):
     print "Coverting svg image to jpg"
     img_convert(str(PHI_out) + ".tcf_drawer.svg", str(PHI_out) + ".tcf_drawer.jpg")
 
-    #Count the number of homologs to determine whether to run MUSCLE and TreeBest and possibly adjust tree image height
+    #get query length
     query_in = open(query, "r")
     query_len = 0
-    filter_list = []
-    in_list = []
     for title, seq in fastaIO.FastaGeneralIterator(query_in):
         query_len = len(seq)
     query_in.close()
     
-    seq1 = 0
-    seq2 = 0
-    seq3 = 0
-    seq4 = 0
-    if str(args.a) == 'hits' or str(args.a) == 'both':
-        if args.f != 0:
-            filter_list.append([str(PHI_out) + ".dna", str(PHI_out) + ".dna_filter-" + str(args.f)])
-        else:
-            in_list.append([str(PHI_out) + ".dna"])
-
-    if str(args.a) == 'flanks' or str(args.a) == 'both':
-        if args.f != 0:
-            filter_list.append([str(PHI_out) + ".flank", str(PHI_out) + ".flank_filter-" + str(args.f)])
-        else:
-            in_list.append([str(PHI_out) + ".flank"])
+    #check that two or more copies were found and need aligning
+    copies = 0
+    dna_copies_in = open(PHI_out + ".dna", "r")
+    for title, seq in fastaIO.FastaGeneralIterator(dna_copies_in):
+        copies+=1
+    dna_copies_in.close()
     
-    if int(args.f) != 0:        
-        for in_path, out_path in filter_list:
-            in_file = open(in_path, "r")
-            out_file = open(out_path, "w")
-            for title, seq in fastaIO.FastaGeneralIterator(in_file):
-                copy_len = len(seq) - (int(args.p_f) * 2)
-                if copy_len <= query_len * args.f:
-                    print>>out_file, ">" + title + "\n" + seq
-                    if '.dna' in in_path:
-                        seq1 += 1
-                    elif '.flank' in in_path:
-                        seq2 += 1
-            in_list.append(out_path)
-            in_file.close()
-            out_file.close()
-    else:
-        for in_path in in_list:
-            if '.dna' in in_path:
-                seq3 += 1
-            elif '.flank' in in_path:
-                seq4 += 1
+    if copies >= 2: 
+        filter_list = []
+        in_list = []
+        if args.a == 'hits' or args.a == 'both':
+            if int(args.f) != 0 and int(args.f) != 1:
+                if args.Type == 'nucl':
+                    filter_list.extend([PHI_out + ".dna", PHI_out + ".dna_filter-" + str(args.f)])
+                elif args.Type == 'prot':
+                    in_list.extend([str(PHI_out) + ".aa"])
+            else:
+                if args.Type == 'nucl':
+                    in_list.extend([str(PHI_out) + ".dna"])
+                elif args.Type == 'prot':
+                    in_list.extend([str(PHI_out) + ".aa"])
 
-    if seq1 > 1 or seq2 > 1 or seq3 > 1 or seq4 > 1:
+        if args.a == 'flanks' or args.a == 'both':
+            if int(args.f) != 0 and int(args.f) != 1 and args.Type == 'nucl':
+                filter_list.extend([PHI_out + ".flank", PHI_out + ".flank_filter-" + str(args.f)])
+            else:
+                in_list.extend([str(PHI_out) + ".flank"])
+    
+        if len(filter_list) != 0:
+            print "in_list =\n", in_list
+            for in_path, out_path in filter_list:
+                in_file = open(in_path, "r")
+                out_file = open(out_path, "w")
+                for title, seq in fastaIO.FastaGeneralIterator(in_file):
+                    copy_len = len(seq) - (int(args.p_f) * 2)
+                    if copy_len <= query_len * args.f:
+                        print>>out_file, ">" + title + "\n" + seq
+                in_list.extend(out_path)
+                in_file.close()
+                out_file.close()
 
         #setup Muscle arguments
         m_args = ''
@@ -169,18 +168,17 @@ def runTarget(query, blast_out, blast_file_out):
             m_args = m_args + "-input"
         if args.m_c == 'True':
             m_args = m_args + "-clwstrict"
-    
 
         #Run Muscle
         for in_path in in_list:
-            print in_path + "\n"
+            print in_path, "\n"
             in_file2 = open(in_path, "r")
             copy_count = 0
             for title, seq in fastaIO.FastaGeneralIterator(in_file2):
                 copy_count += 1
             print str(copy_count) + " copies in " + in_path
             muscle_out = in_path + ".msa"
-            print "Running Muscle on filtered hits"
+            print "Running Muscle"
             MUSCLE(in_path, muscle_out)
 
             #Run TreeBest
@@ -201,7 +199,8 @@ def runTarget(query, blast_out, blast_file_out):
             print "Coverting eps image to jpg"
             subp.call(["convert", tree_out + ".eps", tree_out + ".jpg"])
     else:
-        print "One or less copies found"
+        print "Less than two copies found. Multiple alignment and tree building will not be performed.\n"
+            
     
 #-----------Make command line argument parser------------------------------------
 
@@ -257,7 +256,7 @@ parser_phi.add_argument("-p_g", metavar="Min intron length", type=int,default=10
 
 parser_phi.add_argument("-p_n", metavar="Max copies", type=int, default=100, help="Maximum number of homolgs in output.")
 
-parser_phi.add_argument("-p_R", action='store_true', default="False", help="Perform realignments to find small exons.")
+parser_phi.add_argument("-p_R", action='store_true', help="Perform realignments to find small exons.")
 
 parser_phi.add_argument("-p_c", metavar="Composition stats", default="0", choices=('0', '1', '2', '3'), help="Use composition-based statistics during realignment. 0 = off, 1 = use 2001-based stats, 2 = use 2005-based stats cibditioned on sequence properties, 3 = use 2005-based stats unconditionally. See BLAST+ help, man page, or web resources for further explanation.")
 
@@ -267,7 +266,7 @@ parser_phi.add_argument("-p_t", metavar="Substitution matrix", default="62", cho
 
 parser_phi.add_argument("-p_f", metavar="Flanking sequence", type=int, default=100, help="Length of flanking sequences to be included.")
 
-parser_phi.add_argument("-p_p", action='store_true', default="False", help="Filter out psuedogenes (matches with internal stop codons).")
+parser_phi.add_argument("-p_p", action='store_true', help="Filter out psuedogenes (matches with internal stop codons).")
 
 
 
@@ -288,19 +287,21 @@ parser_muscle.add_argument("-m_c", action='store_true', default="False", help="W
 args = parser.parse_args()
 
 #change arguments to usable forms or make new assignment
+realign = '0'
+print "realign before = ", realign
 if args.Type == 'prot':
     Type = '1'
 elif args.Type == 'nucl':
     Type = '0'
 args.p_t = path + 'BLOSUM' + str(args.p_t) + '.txt'
-if args.p_R == 'False':
-    realign = '0'
-elif args.p_R == 'True':
+if args.p_R == 1:
+    print "args.p_R is true\n"
     realign = '1'
-if args.p_p == 'False':
-    args.p_p = '0'
-else:
+    print "realign after = ", realign
+if args.p_p == 'True':
     args.p_p = '1'
+else:
+    args.p_p = '0'
 m_args = ''
 if args.m_d == 'diags':
     m_args = "-diags"
@@ -308,7 +309,8 @@ if args.m_g == 'input':
     m_args = m_args + "-input"
 if args.m_c == 'True':
     m_args = m_args + "-clwstrict"
-
+print "args.p_R end = ", args.p_R
+print "realign end check = ", realign
 #limit the number of homologs to be drawn by PHI drawer but allow more for other steps
 num_hom = args.p_n    
 if num_hom > 500:
