@@ -138,7 +138,6 @@ $Output      = defined $opt_o ? $opt_o : "protein_copies";
 $Help        = defined $opt_h ? $opt_h : "";
 
 
-
 usuage() if((!$Input)||($Help));
 
 
@@ -1505,9 +1504,9 @@ foreach(keys(%Sbjct_Copies)) {
 
 		
 
-			system("/usr/local/blast/bin/formatdb -i $Output.TS -o F -p F\n");
+			system("formatdb -i $Output.TS -o F -p F\n");
 
-			system("/usr/local/blast/bin/blastall -i $Output.TQ -d $Output.TS -o $Output.TO -p tblastn -e $Max_Evalue -F F -C $Composition\n") if($Protein == 1);
+			system("blastall -m 0 -i $Output.TQ -d $Output.TS -o $Output.TO -p tblastn -e $Max_Evalue -F F -C $Composition\n") if($Protein == 1);
 
 #			system("formatdb -i $Output.TS -o F -p F\n");
 
@@ -1515,7 +1514,7 @@ foreach(keys(%Sbjct_Copies)) {
 
 
 
-			system("/usr/local/blast/bin/blastall -i $Output.TQ -d $Output.TS -o $Output.TO -p blastn -e $Max_Evalue -F F\n") if($Protein == 0);
+			system("blastall -m 0 -i $Output.TQ -d $Output.TS -o $Output.TO -p blastn -e $Max_Evalue -F F\n") if($Protein == 0);
 
 
 
