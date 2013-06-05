@@ -172,13 +172,9 @@ def runTarget(query, blast_out, blast_file_out):
         #Run Muscle
         for in_path in in_list:
             print in_path, "\n"
-            in_file2 = open(in_path, "r")
-            copy_count = 0
-            for title, seq in fastaIO.FastaGeneralIterator(in_file2):
-                copy_count += 1
-            print str(copy_count) + " copies in " + in_path
+            print str(copies) + " copies in " + in_path, "\n"
             muscle_out = in_path + ".msa"
-            print "Running Muscle"
+            print "Running Muscle\n"
             MUSCLE(in_path, muscle_out)
 
             #Run TreeBest
@@ -189,8 +185,8 @@ def runTarget(query, blast_out, blast_file_out):
             print "TreeBest finished, converting output file to eps image"
 
             out = open(tree_out + ".eps", "w") #open output file for redirected stdout
-            if seq > 45:
-                height = seq * 10
+            if copies > 45:
+                height = seq * 12
                 subp.call(["treebest",  "export", "-y", str(height), tree_out], stdout=out)
             else:
                 subp.call(["treebest",  "export", tree_out], stdout=out)
