@@ -49,10 +49,10 @@ ident_list4 = frange_convert(ident_list3)
     
 
 def BLASTN(query, blast_file_out):
-    subp.call(["blastall", "-p", "blastn", "-d", str(args.genome), "-i", query, "-o", str(blast_file_out) + ".blast", "-e", str(args.b_e), "-b", str(args.b_a), "-v", str(args.b_d), "-a", str(args.b_p)])
+    subp.call(["blastall", "-p", "blastn", "-d", str(args.genome), "-i", query, "-o", str(blast_file_out) + ".blast", "-e", str(args.b_e), "-b", str(args.b_a), "-v", str(args.b_d), "-a", str(args.P)])
 
 def TBLASTN(query, blast_file_out):
-    subp.call(["blastall", "-p", "tblastn", "-F", "F", "-m", "0", "-d", str(args.genome), "-i", query, "-o", str(blast_file_out) + ".blast", "-e", str(args.b_e), "-b", str(args.b_a), "-v", str(args.b_d), "-a", str(args.b_p)])
+    subp.call(["blastall", "-p", "tblastn", "-F", "F", "-m", "0", "-d", str(args.genome), "-i", query, "-o", str(blast_file_out) + ".blast", "-e", str(args.b_e), "-b", str(args.b_a), "-v", str(args.b_d), "-a", str(args.P)])
 
 def Blast_draw(blast_file_out):
     subp.call(["perl", path + "v3_blast_drawer.pl", "-i", str(blast_file_out) + ".blast", "-o", str(blast_file_out)])
@@ -64,10 +64,13 @@ def PHI(blast_in, PHI_out):
     subp.call(["perl", path + "PHI_2.4.pl", "-i", blast_in, "-q", query, "-D", args.genome, "-o", PHI_out, "-e", str(args.p_e), "-M", str(args.p_M), "-P", Type, "-d", str(args.p_d), "-g", str(args.p_g), "-n", str(args.p_n), "-c", str(args.p_c), "-G", str(args.p_G), "-t", str(args.p_t), "-f", str(args.p_f), "-p", args.p_p, "-R", realign])
 
 def PHI_draw(PHI_out, Type):
-    subp.call(["perl", path + "PHI_drawer2.pl", "-i", str(PHI_out) + ".list", "-o", str(PHI_out) + ".tcf_drawer", "-m", args.p_t, "-P", Type, "-n", str(num_hom)])
+    subp.call(["perl", path + "PHI_drawer2.pl", "-i", str(PHI_out) + ".list", "-o", str(PHI_out) + ".tcf_drawer", "-m", args.p_t, "-P", Type, "-n", str(args.p_n)])
 
-def MUSCLE(in_path, out_path):
-    subp.call(["muscle", "-in", in_path, "-out", out_path, "-maxiters", str(args.m_m), str(m_args)])
+def MAFFT_NT(in_path, out_path):
+    subp.call(["mafft", "--ep", "0.75", "--op", "3.0", "--thread",  str(args.P), "--localpair", "--maxiterate",  "4", "--out", out_path, in_path])
+
+def MAFFT_P(in_path, out_path):
+    subp.call(["mafft", "--thread",  str(args.P), "--maxiterate",  "100", "--out", out_path, in_path])
 
 def runTarget(query, blast_out, blast_file_out):
     #make output directory
@@ -75,44 +78,38 @@ def runTarget(query, blast_out, blast_file_out):
 
     #use blastn if DNA
     if args.Type == 'nucl':
-        print "Using BLASTN"
+        print "Using BLASTN\n"
         BLASTN(query, blast_file_out)
         
     #use tblastn if protein
     elif args.Type == 'prot':
-        print "Using TBLASTN"
+        print "Using TBLASTN\n"
         TBLASTN(query, blast_file_out)
 
     #make svg drawing(s)
-    print "Making svg image of blast results"
+    print "Making svg image of blast results\n"
     Blast_draw(blast_file_out)
 
     #convert svg image to jpg
-    print "Converting svg to jpg"
+    print "Converting svg to jpg\n"
     for svg_file in glob.glob(str(blast_file_out) + "*.svg"): 
         jpg_file = os.path.splitext(svg_file)
         jpg_file = jpg_file[0] + ".jpg"
         img_convert(svg_file, jpg_file)
         
     blast_in = str(blast_file_out) + ".blast"
-    print "blast_file_out:  ", blast_file_out
-    print "blast_in:  ", blast_in
     PHI_out = str(blast_file_out) + ".tcf"
- 
     print "Running PHI"
     PHI(blast_in, PHI_out)
-    print "PHI finished!"
+    print "PHI finished!\n"
 
     #make svg image of PHI homologs
-    print "Making svg image of homologs"
-    num_hom = args.p_n
-    if num_hom > 500:
-        num_hom = 500
+    print "Making svg image of homologs\n"
     PHI_draw(PHI_out, Type)
 
-    #convert svg to jpg
-    print "Coverting svg image to jpg"
-    img_convert(str(PHI_out) + ".tcf_drawer.svg", str(PHI_out) + ".tcf_drawer.jpg")
+    #convert svg to pdf
+    print "Coverting svg image to pdf\n"
+    img_convert(str(PHI_out) + ".tcf_drawer.svg", str(PHI_out) + ".tcf_drawer.pdf")
 
     #get query length
     query_in = open(query, "r")
@@ -121,7 +118,7 @@ def runTarget(query, blast_out, blast_file_out):
         query_len = len(seq)
     query_in.close()
     
-    #check that two or more copies were found and need aligning
+    #check that two or more copies were found
     copies = 0
     dna_copies_in = open(PHI_out + ".dna", "r")
     for title, seq in fastaIO.FastaGeneralIterator(dna_copies_in):
@@ -132,7 +129,7 @@ def runTarget(query, blast_out, blast_file_out):
         filter_list = []
         in_list = []
         if args.a == 'hits' or args.a == 'both':
-            print "hits will be aligned\n"
+            print "hits will be aligned"
             if args.f > 0:
                 print "Filtering flagged for hits\n"
                 if args.Type == 'nucl':
@@ -146,7 +143,7 @@ def runTarget(query, blast_out, blast_file_out):
                     in_list.append(str(PHI_out) + ".aa")
 
         if args.a == 'flanks' or args.a == 'both':
-            print "Flanks will be aligned\n"
+            print "Flanks will be aligned"
             if args.f > 0:
                 print "Filtering flagged for flanks\n"
                 if args.Type == 'nucl':
@@ -155,7 +152,7 @@ def runTarget(query, blast_out, blast_file_out):
                     in_list.append(str(PHI_out) + ".flank")
             else:
                 in_list.append(str(PHI_out) + ".flank")
-        print "Entries in filter list:  ", len(filter_list)
+        print "Entries in filter list:  ", len(filter_list), "\n"
         if len(filter_list) != 0:
             #print "in_list =\n", in_list
             for in_path, out_path in filter_list:
@@ -169,43 +166,55 @@ def runTarget(query, blast_out, blast_file_out):
                 in_file.close()
                 out_file.close()
 
-        #setup Muscle arguments
-        m_args = ''
-        if args.m_d == 'diags':
-            m_args = "-diags"
-        if args.m_g == 'input':
-            m_args = m_args + "-input"
-        if args.m_c == 'True':
-            m_args = m_args + "-clwstrict"
-
-        #Run Muscle
+        #Run Mafft
         copies = 0
         for in_path in in_list:
-            print in_path, "\n"
             in_file = open(in_path, "r")
             for title, seq in fastaIO.FastaGeneralIterator(in_file):
                 copies += 1
             print str(copies) + " copies in " + in_path, "\n"
-            muscle_out = in_path + ".msa"
-            print "Running Muscle\n"
-            MUSCLE(in_path, muscle_out)
+            msa_out = in_path + ".msa"
+            print "Running Mafft"
+            if args.Type == 'nucl':
+                MAFFT_NT(in_path, msa_out)
+            else:
+                MAFFT_P(in_path, msa_out)
 
-            #Run TreeBest
-            tree_out = muscle_out + ".nw"
-            out = open(tree_out, "w") #open output file for redirected stdout
-            subp.call(["treebest", "nj", muscle_out], stdout=out)
-            out.close() #close output file
-            print "TreeBest finished, converting output file to eps image"
+            #Run FastTreeMP
+            print "Running FastTreeMP\n"
+            tree_out = msa_out + ".nw"
+            print "Output tree path: ", tree_out, "\n\n"
+            
+            #Can only limit FastTree processor use through OMP_NUM_THREADS. Otherwise, it will use all processors available when compiled.
+            current_env = os.environ.copy()
+            #print "current_env before change:  ", current_env
+            current_env['OMP_NUM_THREADS'] = str(args.P)
+            #print "OMP_NUM_THREADS after change:  ", current_env['OMP_NUM_THREADS'], "\n\n"
 
+            
+            if args.Type == 'nucl':
+                proc = subp.Popen(["FastTreeMP", "-nt", "-gamma", "-out", tree_out, msa_out], env = current_env)
+                proc.wait()
+                print "\nFastTreeMP finished.\n"
+            else:
+                proc = subp.Popen(["FastTreeMP", "-gamma", "-out", tree_out, msa_out], env = current_env)
+                proc.wait()
+                print "FastTreeMP finished.\n"
+
+            print "Converting output tree file to eps image\n"
             out = open(tree_out + ".eps", "w") #open output file for redirected stdout
+            #print "Eps image out path: ", out
+            
             if copies > 45:
-                height = copies * 11
-                subp.call(["treebest",  "export", "-y", str(height), tree_out], stdout=out)
+                height = copies * 12
+                width = round(height/3)
+                print "Image height: ", height, "\twidth: ", width, "\n"
+                subp.call(["treebest",  "export", "-y", str(height), "-x", str(width), "-b", "4.5", "-f", "13", tree_out], stdout=out)
             else:
                 subp.call(["treebest",  "export", tree_out], stdout=out)
             out.close() #close output file
 
-            print "Coverting eps image to pdf"
+            print "Coverting eps image to pdf\n"
             subp.call(["convert", tree_out + ".eps", tree_out + ".pdf"])
     else:
         print "Less than two copies found. Multiple alignment and tree building will not be performed.\n"
@@ -235,6 +244,7 @@ parser.add_argument("-a", metavar="Alignments to perform", choices=("hits", "fla
 
 parser.add_argument("-f", metavar="Filter length (query length * X)", type=float, default=0, choices=ident_list4, help="Multiple of query length used as maximum length of copies to be included in the multiple sequence alignment(s). Valid values are: 0-10 by 0.01 increments. Default of 0 means no filtering. Values between 0 and 1 return copies smaller than the input query sequence.")
 
+parser.add_argument("-P", metavar="Processors", type=int, default=1, help="The number of processors to use for Blast, Mafft, and FastTree steps. All other steps use 1 processor. The programs are not multi-node ready, so the number of processors is limited to that available to one computer/node.")
 
 
 #BLAST arguments
@@ -246,18 +256,13 @@ parser_blast.add_argument("-b_a", metavar="# alignments", default="500", type=in
 
 parser_blast.add_argument("-b_d", metavar="# descriptions", default="100", help="The maximum number of descriptions of hits included in BLAST output per query sequence.")
 
-parser_blast.add_argument("-b_o", metavar="Other BLAST options", help="Other options: you may use any other valid Blast options for the search type being used except those that change the output format from default (including the use of GenBank accession numbers). Place them all here as you would for running standalone BLAST")
-
-parser_blast.add_argument("-b_p", metavar="# processors", default="1", type=int, help="The number of processors to use for BLAST stage. All other stages currently use only 1 processor.")
-
-
 
 #PHI arguments
 parser_phi = parser.add_argument_group("PHI")
 
 parser_phi.add_argument("-p_e", metavar="PHI E-value", default="0.01", type=float, help="Maximum Expect value for PHI.")
 
-parser_phi.add_argument("-p_M", metavar="Minimum query match", type=float, default=0.7, choices=ident_list2, help="Minimum decimal fraction of match length.") #choices=frange(0,1,0.01)
+parser_phi.add_argument("-p_M", metavar="Minimum query match", type=float, default=0.7, choices=ident_list2, help="Minimum decimal fraction of match length.")
 
 parser_phi.add_argument("-p_d", metavar="Max intron length", default="8000", type=int, help="Maximum intron length.")
 
@@ -278,19 +283,6 @@ parser_phi.add_argument("-p_f", metavar="Flanking sequence", type=int, default=1
 parser_phi.add_argument("-p_p", action='store_true', help="Filter out psuedogenes (matches with internal stop codons).")
 
 
-
-#Muscle arguments
-parser_muscle = parser.add_argument_group("Muscle")
-
-parser_muscle.add_argument("-m_m", metavar="Max alignment iterations", type=int, default=8, help="Maximum number of alignment iterations.")
-
-parser_muscle.add_argument("-m_d", metavar="Find diagonals", choices=('diags', ''), default='diags', help="Find diagonals (faster for similar sequences)")
-
-parser_muscle.add_argument("-m_g", metavar="Grouping", choices=('group', 'input'), default="group", help="Output sequences in input or group (by similarity) order.")
-
-parser_muscle.add_argument("-m_c", action='store_true', default="False", help="Write output in Clustal W format (default format is FASTA) with 'CLUSTAL W (1.81)' header.")
-
-
 #-----------Parse command line input---------------------------------------------
 
 args = parser.parse_args()
@@ -304,27 +296,20 @@ elif args.Type == 'nucl':
     Type = '0'
 args.p_t = path + 'BLOSUM' + str(args.p_t) + '.txt'
 if args.p_R == 1:
-    print "args.p_R is true\n"
     realign = '1'
-    print "realign after = ", realign
 if args.p_p == 'True':
     args.p_p = '1'
 else:
     args.p_p = '0'
-m_args = ''
-if args.m_d == 'diags':
-    m_args = "-diags"
-if args.m_g == 'input':
-    m_args = m_args + "-input"
-if args.m_c == 'True':
-    m_args = m_args + "-clwstrict"
+
 print "args.p_R end = ", args.p_R
 print "realign end check = ", realign
 #limit the number of homologs to be drawn by PHI drawer but allow more for other steps
-num_hom = args.p_n    
-if num_hom > 500:
-    num_hom = 500
+#num_hom = args.p_n    
+#if num_hom > 500:
+    #num_hom = 500
 print "args.f = ", args.f
+
 
 #-----------Create main output directory-----------------------------------------
 
@@ -351,15 +336,13 @@ subp.call(["formatdb", "-i", args.genome,"-p", "F", "-o", "T", "-n", args.genome
 
 subp.call(["perl", path + "reads_indexer.pl", "-i", args.genome])
 
-if args.b_o == 'None':
-    args.b_o = ''
 
 
 #-----------Single input file----------------------------------------------------
 
 #for single indiviual query or grouped query
 if args.q and args.i == 's' or args.i == 'g':
-    print "Single input file, single or group input."
+    print "Single input file, single or group input.\n"
     query = args.q
     query_name = os.path.split(args.q)[1]
     #set output directory
@@ -372,7 +355,7 @@ if args.q and args.i == 's' or args.i == 'g':
 
 #for multiple individual queries-------------------------------------------------
 elif args.q and args.i == 'mi':
-    print "Single input file, multiple individual inputs."
+    print "Single input file, multiple individual inputs.\n"
     basequery = os.path.split(args.q)
     basedir = basequery[0]
     #print str(args.q) + '\n', basedir + '\n'
@@ -406,7 +389,7 @@ elif args.q and args.i == 'mi':
 
 #for single individual queries or grouped queries
 elif args.d and args.i == 's' or args.i == 'g':
-    print "Directory input, each file has a single or group input."
+    print "Directory input, each file has a single or group input.\n"
     
     files = os.listdir(args.d) #get all files in the directory
 
@@ -432,7 +415,7 @@ elif args.d and args.i == 's' or args.i == 'g':
 
 #for multiple individual queries-------------------------------------------------
 elif args.d and args.i == 'mi':
-    print "Directory input, each file has multiple individual queries."
+    print "Directory input, each file has multiple individual queries.\n"
     
     files = os.listdir(args.d) #get all files in the directory
 
