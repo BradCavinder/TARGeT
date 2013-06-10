@@ -22,10 +22,6 @@ The following are required for TARGeT to run and must be in your PATH (i.e. must
    MUSCLE - 3.8.31
    TreeBest - 1.9.2
 
-  Python packages:
-   setuptools - 0.6c11 (needed to install pyfasta)
-   pyfasta - 0.4.5 (note: to handle the default output files of other programs that include spaces and/or special charaters in FASTA headers, modification of pyfasta's fasta.py file has been made and is included here as fasta_edit.py in the rsrc folder. You will either need to backup and replace the default fasta.py file (in the pyfasta-0.4.5/pyfasta/ folder) with fasta_edit.py [copied and renamed to fasta.py] before pyfasta installation or come up with your own solution to remove or change spaces and special charaters in FASTA headers, if present)
-
 
 Installation
 ============
@@ -34,6 +30,8 @@ TARGeT itself does not require installation as it consists of Python and Perl sc
 
 Change Log
 ==========
+
+1.1 - 09JUN2013 - Multiple bug fixes. Removed the need for Python packages pyfasta and setuptools.
 
 1.00 - 15APR2012 - Initial release
 
