@@ -95,6 +95,8 @@ def runTarget(query, blast_out, blast_file_out):
         img_convert(svg_file, jpg_file)
         
     blast_in = str(blast_file_out) + ".blast"
+    print "blast_file_out:  ", blast_file_out
+    print "blast_in:  ", blast_in
     PHI_out = str(blast_file_out) + ".tcf"
  
     print "Running PHI"
@@ -130,33 +132,40 @@ def runTarget(query, blast_out, blast_file_out):
         filter_list = []
         in_list = []
         if args.a == 'hits' or args.a == 'both':
-            if int(args.f) != 0 and int(args.f) != 1:
+            print "hits will be aligned\n"
+            if args.f > 0:
+                print "Filtering flagged for hits\n"
                 if args.Type == 'nucl':
-                    filter_list.extend([PHI_out + ".dna", PHI_out + ".dna_filter-" + str(args.f)])
-                elif args.Type == 'prot':
-                    in_list.extend([str(PHI_out) + ".aa"])
+                    filter_list.append([PHI_out + ".dna", PHI_out + ".dna_filter-" + str(args.f)])
+                else:
+                    in_list.append(str(PHI_out) + ".aa")
             else:
                 if args.Type == 'nucl':
-                    in_list.extend([str(PHI_out) + ".dna"])
-                elif args.Type == 'prot':
-                    in_list.extend([str(PHI_out) + ".aa"])
+                    in_list.append(str(PHI_out) + ".dna")
+                else:
+                    in_list.append(str(PHI_out) + ".aa")
 
         if args.a == 'flanks' or args.a == 'both':
-            if int(args.f) != 0 and int(args.f) != 1 and args.Type == 'nucl':
-                filter_list.extend([PHI_out + ".flank", PHI_out + ".flank_filter-" + str(args.f)])
+            print "Flanks will be aligned\n"
+            if args.f > 0:
+                print "Filtering flagged for flanks\n"
+                if args.Type == 'nucl':
+                    filter_list.append([PHI_out + ".flank", PHI_out + ".flank_filter-" + str(args.f)])
+                else:
+                    in_list.append(str(PHI_out) + ".flank")
             else:
-                in_list.extend([str(PHI_out) + ".flank"])
-    
+                in_list.append(str(PHI_out) + ".flank")
+        print "Entries in filter list:  ", len(filter_list)
         if len(filter_list) != 0:
-            print "in_list =\n", in_list
+            #print "in_list =\n", in_list
             for in_path, out_path in filter_list:
                 in_file = open(in_path, "r")
                 out_file = open(out_path, "w")
                 for title, seq in fastaIO.FastaGeneralIterator(in_file):
                     copy_len = len(seq) - (int(args.p_f) * 2)
-                    if copy_len <= query_len * args.f:
+                    if copy_len <= (query_len * args.f):
                         print>>out_file, ">" + title + "\n" + seq
-                in_list.extend(out_path)
+                in_list.append(out_path)
                 in_file.close()
                 out_file.close()
 
@@ -170,8 +179,12 @@ def runTarget(query, blast_out, blast_file_out):
             m_args = m_args + "-clwstrict"
 
         #Run Muscle
+        copies = 0
         for in_path in in_list:
             print in_path, "\n"
+            in_file = open(in_path, "r")
+            for title, seq in fastaIO.FastaGeneralIterator(in_file):
+                copies += 1
             print str(copies) + " copies in " + in_path, "\n"
             muscle_out = in_path + ".msa"
             print "Running Muscle\n"
@@ -186,14 +199,14 @@ def runTarget(query, blast_out, blast_file_out):
 
             out = open(tree_out + ".eps", "w") #open output file for redirected stdout
             if copies > 45:
-                height = seq * 12
+                height = copies * 11
                 subp.call(["treebest",  "export", "-y", str(height), tree_out], stdout=out)
             else:
                 subp.call(["treebest",  "export", tree_out], stdout=out)
             out.close() #close output file
 
-            print "Coverting eps image to jpg"
-            subp.call(["convert", tree_out + ".eps", tree_out + ".jpg"])
+            print "Coverting eps image to pdf"
+            subp.call(["convert", tree_out + ".eps", tree_out + ".pdf"])
     else:
         print "Less than two copies found. Multiple alignment and tree building will not be performed.\n"
             
@@ -311,6 +324,7 @@ print "realign end check = ", realign
 num_hom = args.p_n    
 if num_hom > 500:
     num_hom = 500
+print "args.f = ", args.f
 
 #-----------Create main output directory-----------------------------------------
 
@@ -326,20 +340,16 @@ subp.call(["mkdir", out_dir])
 
 
 #-----------Make BLAST database -------------------------------------------------
-
+print "Genome:  ", args.genome, "\n"
 name = args.genome.split('/')
 name = name[-1]
 
-#don't remake the database if it's already present
-if not (os.path.exists(str(args.genome) + ".nin") or os.path.exists(str(args.genome) + ".nsd") or os.path.exists(str(args.genome) + ".nhr") or os.path.exists(str(args.genome) + ".nsi") or os.path.exists(str(args.genome) + ".nsq")):
-    subp.call(["formatdb", "-i", args.genome,"-p", "F", "-o", "T", "-n", args.genome])
+subp.call(["formatdb", "-i", args.genome,"-p", "F", "-o", "T", "-n", args.genome])
 
 
 #-----------Run custom indexer---------------------------------------------------
 
-#don't rerun the custom indexer if it's already been done
-if not os.path.exists(str(args.genome) + ".index"):
-    subp.call(["perl", path + "reads_indexer.pl", "-i", args.genome])
+subp.call(["perl", path + "reads_indexer.pl", "-i", args.genome])
 
 if args.b_o == 'None':
     args.b_o = ''
