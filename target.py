@@ -97,6 +97,9 @@ def runTarget(query, blast_out, blast_file_out):
         jpg_file = jpg_file[0] + ".jpg"
         img_convert(svg_file, jpg_file)
         
+    if args.S == 'Blast':
+        sys.exit("Exiting after finishing Blast stage.\nTARGeT has finished!\n")
+        
     blast_in = str(blast_file_out) + ".blast"
     PHI_out = str(blast_file_out) + ".tcf"
     print "Running PHI"
@@ -110,6 +113,9 @@ def runTarget(query, blast_out, blast_file_out):
     #convert svg to pdf
     print "Coverting svg image to pdf\n"
     img_convert(str(PHI_out) + ".tcf_drawer.svg", str(PHI_out) + ".tcf_drawer.pdf")
+    
+    if args.S == 'PHI':
+        sys.exit("Exiting after finishing PHI stage.\nTARGeT has finished!\n")
 
     #get query length
     query_in = open(query, "r")
@@ -168,6 +174,8 @@ def runTarget(query, blast_out, blast_file_out):
 
         #Run Mafft
         copies = 0
+        in_count = len(in_list)
+        processed = 0
         for in_path in in_list:
             in_file = open(in_path, "r")
             for title, seq in fastaIO.FastaGeneralIterator(in_file):
@@ -179,6 +187,14 @@ def runTarget(query, blast_out, blast_file_out):
                 MAFFT_NT(in_path, msa_out)
             else:
                 MAFFT_P(in_path, msa_out)
+            processed += 1
+            
+            #print "in_count - processed = ", in_count - processed, "\n"
+            if args.S == 'MSA':
+                if (in_count - processed) == 0:
+                    sys.exit("Exiting after finishing MSA stage.\nTARGeT has finished!\n")
+                else:
+                    continue
 
             #Run FastTreeMP
             print "Running FastTreeMP\n"
@@ -199,7 +215,7 @@ def runTarget(query, blast_out, blast_file_out):
             else:
                 proc = subp.Popen(["FastTreeMP", "-gamma", "-out", tree_out, msa_out], env = current_env)
                 proc.wait()
-                print "FastTreeMP finished.\n"
+                print "\nFastTreeMP finished.\n"
 
             print "Converting output tree file to eps image\n"
             out = open(tree_out + ".eps", "w") #open output file for redirected stdout
@@ -246,6 +262,7 @@ parser.add_argument("-f", metavar="Filter length (query length * X)", type=float
 
 parser.add_argument("-P", metavar="Processors", type=int, default=1, help="The number of processors to use for Blast, Mafft, and FastTree steps. All other steps use 1 processor. The programs are not multi-node ready, so the number of processors is limited to that available to one computer/node.")
 
+parser.add_argument("-S", metavar="Stopping point of program", type=str, choices=("Blast", "PHI", "MSA", "Tree"), default="Tree", help="The stage, after completion, to stop the program. By default, all stages (Blast, PHI, MSA, Tree) are run. For example if you want to stop the program after Blast and PHI, exiting before the MSA stage, enter PHI.")
 
 #BLAST arguments
 parser_blast = parser.add_argument_group("BLAST")
@@ -289,7 +306,7 @@ args = parser.parse_args()
 
 #change arguments to usable forms or make new assignment
 realign = '0'
-print "realign before = ", realign
+#print "realign before = ", realign
 if args.Type == 'prot':
     Type = '1'
 elif args.Type == 'nucl':
@@ -302,13 +319,13 @@ if args.p_p == 'True':
 else:
     args.p_p = '0'
 
-print "args.p_R end = ", args.p_R
-print "realign end check = ", realign
+#print "args.p_R end = ", args.p_R
+#print "realign end check = ", realign
 #limit the number of homologs to be drawn by PHI drawer but allow more for other steps
 #num_hom = args.p_n    
 #if num_hom > 500:
     #num_hom = 500
-print "args.f = ", args.f
+#print "args.f = ", args.f
 
 
 #-----------Create main output directory-----------------------------------------
@@ -325,15 +342,15 @@ subp.call(["mkdir", out_dir])
 
 
 #-----------Make BLAST database -------------------------------------------------
-print "Genome:  ", args.genome, "\n"
+#print "Genome:  ", args.genome, "\n"
 name = args.genome.split('/')
 name = name[-1]
-
+print "\nRunning formatdb\n"
 subp.call(["formatdb", "-i", args.genome,"-p", "F", "-o", "T", "-n", args.genome])
 
 
 #-----------Run custom indexer---------------------------------------------------
-
+print "Running custom indexer\n"
 subp.call(["perl", path + "reads_indexer.pl", "-i", args.genome])
 
 
@@ -342,7 +359,7 @@ subp.call(["perl", path + "reads_indexer.pl", "-i", args.genome])
 
 #for single indiviual query or grouped query
 if args.q and args.i == 's' or args.i == 'g':
-    print "Single input file, single or group input.\n"
+    print "Single input file, single or group input\n"
     query = args.q
     query_name = os.path.split(args.q)[1]
     #set output directory
