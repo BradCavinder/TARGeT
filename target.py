@@ -24,8 +24,6 @@ import fastaIO
 path = sys.path[0]
 path = str(path) + "/"
 
-version_info = "TARGeT-2.00"
-
 #-----------Define functions-----------------------------------------------------
 
 def frange(x, y, jump):
@@ -331,9 +329,6 @@ else:
     #num_hom = 500
 #print "args.f = ", args.f
 
-if args.v:
-    print version_info
-    sys.exit()
 
 #-----------Create main output directory-----------------------------------------
 
@@ -344,8 +339,17 @@ else:
     args.o = ""
 #make the main output directory using current date and time
 now = datetime.datetime.now()
-out_dir = args.o + args.Run_Name + "_" + now.strftime("%Y_%m_%d_%H%M%S")
-subp.call(["mkdir", out_dir])
+if args.q and args.i == 's' or args.i == 'g':
+    query = args.q
+    query_name = os.path.splitext(query)[0]
+    query_name = os.path.split(query_name)[1]
+    out_dir = args.o + args.Run_Name + "_" + query_name + "_" + now.strftime("%Y_%m_%d_%H%M%S")
+else:
+    out_dir = args.o + args.Run_Name + "_" + now.strftime("%Y_%m_%d_%H%M%S")
+    try:
+        subp.call(["mkdir", out_dir])
+    except:
+        pass
 
 
 #-----------Make BLAST database -------------------------------------------------
@@ -367,13 +371,9 @@ subp.call(["perl", path + "reads_indexer.pl", "-i", args.genome])
 #for single indiviual query or grouped query
 if args.q and args.i == 's' or args.i == 'g':
     print "Single input file, single or group input\n"
-    query = args.q
-    query_name = os.path.split(args.q)[1]
-    #set output directory
-    blast_out = os.path.normpath(os.path.join(out_dir, query_name))
     #set output filename
-    blast_file_out = os.path.join(blast_out, query_name)
-    runTarget(query, blast_out, blast_file_out)
+    blast_file_out = os.path.join(out_dir, query_name)
+    runTarget(query, out_dir, blast_file_out)
     print "TARGeT has finished!"
 
 
@@ -397,12 +397,13 @@ elif args.q and args.i == 'mi':
 
     #Run pipeline on each file with it's own output directory in the main output directory
     for fasta2 in new_files:
-        file_name = os.path.split(fasta2)[1]
+        filename = os.path.splitext(fasta2)[0]
+        file_name = os.path.split(filename)[1]
         query = fasta2
         #set output directory
         blast_out = os.path.normpath(os.path.join(out_dir, file_name))
         #set output filename
-        blast_file_out = os.path.join(blast_out, file_name +".blast")
+        blast_file_out = os.path.join(blast_out, file_name + ".blast")
         runTarget(query, blast_out, blast_file_out)
         p += 1
         print "TARGeT has processed ", p, " of ", count, " subfiles"
@@ -429,7 +430,8 @@ elif args.d and args.i == 's' or args.i == 'g':
     #Run pipeline on each file with it's own output directory in the main output directory
     for f in files:
         query = os.path.normpath(os.path.join(args.d, f))
-        query_name = f
+        query_name = os.path.splitext(query)[0]
+        query_name = os.path.split(query_name)[0]
         blast_out = os.path.normpath(os.path.join(out_dir, query_name)) #output directory
         blast_file_out = os.path.join(blast_out, query_name) #output files basename
         runTarget(query, blast_out, blast_file_out)
@@ -465,14 +467,8 @@ elif args.d and args.i == 'mi':
         subp.call(["python", "split_fasta.py", full])
 
     #count the number of new input files
-    files2 = os.listdir(args.d) #get all files in the directory
-    count2 = 0
-    for fasta2 in new_files:
-        if fasta2 in files:
-            continue
-        else:
-            count2 += 1
-        #print fasta2        
+    new_files = glob.glob(str(basedir) + "/*.fix.fa")
+    count2 = len(new_files)
     print count2, " subfiles to be processed"
 
     #setup conter for subfiles processed
