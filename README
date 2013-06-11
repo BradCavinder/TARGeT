@@ -20,7 +20,7 @@ The following are required for TARGeT to run and must be in your PATH (i.e. must
    NCBI BLAST2 - 2.2.26 (note: the newer BLAST+ will not work with TARGeT)
    ImageMagick - 6.6.0-4
    MAFFT - 7.037, 7.045
-   FastTreeMP - 
+   FastTreeMP - 2.1.7
    TreeBest - 1.9.2
 
   
