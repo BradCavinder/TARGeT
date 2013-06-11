@@ -24,6 +24,8 @@ import fastaIO
 path = sys.path[0]
 path = str(path) + "/"
 
+version_info = "TARGeT-2.00"
+
 #-----------Define functions-----------------------------------------------------
 
 def frange(x, y, jump):
@@ -238,7 +240,7 @@ def runTarget(query, blast_out, blast_file_out):
     
 #-----------Make command line argument parser------------------------------------
 
-parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter, description="This is the command line implementation of TARGeT: Tree Analysis of Related Genes and Transposons (http://target.iplantcollaborative.org/). Please read the README file for program dependencies.")
+parser = argparse.ArgumentParser(prog='target.py', formatter_class=argparse.ArgumentDefaultsHelpFormatter, description="This is the command line implementation of TARGeT: Tree Analysis of Related Genes and Transposons (http://target.iplantcollaborative.org/). Please read the README file for program dependencies.")
 
 input_group = parser.add_mutually_exclusive_group(required=True)
 
@@ -263,6 +265,8 @@ parser.add_argument("-f", metavar="Filter length (query length * X)", type=float
 parser.add_argument("-P", metavar="Processors", type=int, default=1, help="The number of processors to use for Blast, Mafft, and FastTree steps. All other steps use 1 processor. The programs are not multi-node ready, so the number of processors is limited to that available to one computer/node.")
 
 parser.add_argument("-S", metavar="Stopping point of program", type=str, choices=("Blast", "PHI", "MSA", "Tree"), default="Tree", help="The stage, after completion, to stop the program. By default, all stages (Blast, PHI, MSA, Tree) are run. For example if you want to stop the program after Blast and PHI, exiting before the MSA stage, enter PHI.")
+
+parser.add_argument("-v", action='version', version='TARGeT-2.00', help="Version information")
 
 #BLAST arguments
 parser_blast = parser.add_argument_group("BLAST")
@@ -327,6 +331,9 @@ else:
     #num_hom = 500
 #print "args.f = ", args.f
 
+if args.v:
+    print version_info
+    sys.exit()
 
 #-----------Create main output directory-----------------------------------------
 
