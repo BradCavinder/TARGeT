@@ -248,7 +248,7 @@ input_group.add_argument("-d", metavar="Input directory", help="Path to input di
 
 parser.add_argument("-t", dest="Type", metavar="Search type", choices=("nucl", "prot"), default="prot", help="Type of input query sequence(s): DNA = 'nucl'  protein = 'prot'")
 
-parser.add_argument("genome", metavar="Genome sequence file", help="Path of the genome sequence file to be searched (or other sequence to be searched).")
+parser.add_argument("genome", metavar="Genome_sequence_file", help="Path of the genome sequence file to be searched (or other sequence to be searched).")
 
 parser.add_argument("Run_Name", help="Name for overall run")
 
@@ -264,7 +264,7 @@ parser.add_argument("-P", metavar="Processors", type=int, default=1, help="The n
 
 parser.add_argument("-S", metavar="Stopping point of program", type=str, choices=("Blast", "PHI", "MSA", "Tree"), default="Tree", help="The stage, after completion, to stop the program. By default, all stages (Blast, PHI, MSA, Tree) are run. For example if you want to stop the program after Blast and PHI, exiting before the MSA stage, enter PHI.")
 
-parser.add_argument("-v", action='version', version='TARGeT-2.00', help="Version information")
+parser.add_argument("-v", metavar="Version information", action='version', version='TARGeT-2.00', help="Version information")
 
 #BLAST arguments
 parser_blast = parser.add_argument_group("BLAST")
