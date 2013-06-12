@@ -264,7 +264,7 @@ parser.add_argument("-P", metavar="Processors", type=int, default=1, help="The n
 
 parser.add_argument("-S", metavar="Stopping point of program", type=str, choices=("Blast", "PHI", "MSA", "Tree"), default="Tree", help="The stage, after completion, to stop the program. By default, all stages (Blast, PHI, MSA, Tree) are run. For example if you want to stop the program after Blast and PHI, exiting before the MSA stage, enter PHI.")
 
-parser.add_argument("-v", metavar="Version information", action='version', version='TARGeT-2.00', help="Version information")
+parser.add_argument("-v", action='version', version='TARGeT-2.00', help="Version information")
 
 #BLAST arguments
 parser_blast = parser.add_argument_group("BLAST")
