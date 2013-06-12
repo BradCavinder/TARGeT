@@ -222,7 +222,7 @@ def runTarget(query, blast_out, blast_file_out):
             #print "Eps image out path: ", out
             
             if copies > 45:
-                height = copies * 12
+                height = copies * 13
                 width = round(height/3)
                 print "Image height: ", height, "\twidth: ", width, "\n"
                 subp.call(["treebest",  "export", "-y", str(height), "-x", str(width), "-b", "4.5", "-f", "13", tree_out], stdout=out)
@@ -365,6 +365,7 @@ subp.call(["perl", path + "reads_indexer.pl", "-i", args.genome])
 #for single indiviual query or grouped query
 if args.q and args.i == 's' or args.i == 'g':
     print "Single input file, single or group input\n"
+    query = args.q
     #set output filename
     blast_file_out = os.path.join(out_dir, query_name)
     runTarget(args.q, out_dir, blast_file_out)
@@ -382,9 +383,7 @@ elif args.q and args.i == 'mi':
     new_files = glob.glob(query_no_ext + "_*.fa")
     print "new files:\n", new_files
     print str(query_no_ext).strip() + "_*.fa\n"
-    count = 0
-    for f in new_files:
-        count += 1        
+    count = len(new_files)
     print count, " files to be processed"
 
     #counter to keep track of the number of files that have been processed
@@ -392,6 +391,7 @@ elif args.q and args.i == 'mi':
 
     #Run pipeline on each file with it's own output directory in the main output directory
     for fasta2 in new_files:
+        query = fasta2
         filename = os.path.splitext(fasta2)[0]
         file_name = os.path.split(filename)[1]
         #set output directory
