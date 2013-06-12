@@ -15,7 +15,7 @@ TARGeT has only been tested on Linux operating systems. Use with other operating
 The following are required for TARGeT to run and must be in your PATH (i.e. must be callable from any directory without giving an absolute or relative path to the programs). Additionally, only the version(s) listed have been tested. Newer or older versions may or may not work.
 
   Programs:
-   Python - 2.7.2
+   Python - 2.7.2, 2.7.4
    Perl - 5.12.4
    NCBI BLAST2 - 2.2.26 (note: the newer BLAST+ will not work with TARGeT)
    ImageMagick - 6.6.0-4
