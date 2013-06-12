@@ -75,6 +75,11 @@ def MAFFT_P(in_path, out_path):
 def runTarget(query, blast_out, blast_file_out):
     #make output directory
     subp.call(["mkdir", blast_out])
+    
+    #make command log file
+    log_out = open(os.path.join(blast_out, "log.txt"), "w")
+    print>>log_out, " ".join(sys.argv)
+    log_out.close()
 
     #use blastn if DNA
     if args.Type == 'nucl':
@@ -264,6 +269,8 @@ parser.add_argument("-P", metavar="Processors", type=int, default=1, help="The n
 
 parser.add_argument("-S", metavar="Stopping point of program", type=str, choices=("Blast", "PHI", "MSA", "Tree"), default="Tree", help="The stage, after completion, to stop the program. By default, all stages (Blast, PHI, MSA, Tree) are run. For example if you want to stop the program after Blast and PHI, exiting before the MSA stage, enter PHI.")
 
+parser.add_argument("-DB", action='store_false', default="True", help="Skip formatDB and custom indexing. These steps are required for the first search against a genome. If the genome sequence file is changed in any way, these steps will need to be performed again. Otherwise, you may use this flag to skip these steps. By default, the steps are always performed")
+
 parser.add_argument("-v", action='version', version='TARGeT-2.00', help="Version information")
 
 #BLAST arguments
@@ -285,7 +292,7 @@ parser_phi.add_argument("-p_M", metavar="Minimum query match", type=float, defau
 
 parser_phi.add_argument("-p_d", metavar="Max intron length", default="8000", type=int, help="Maximum intron length.")
 
-parser_phi.add_argument("-p_g", metavar="Min intron length", type=int,default=10, help="Minimum intron length.")
+parser_phi.add_argument("-p_g", metavar="Min intron length", type=int, default=10, help="Minimum intron length.")
 
 parser_phi.add_argument("-p_n", metavar="Max copies", type=int, default=100, help="Maximum number of homolgs in output.")
 
@@ -346,26 +353,21 @@ else:
         pass
 
 
-#-----------Make BLAST database -------------------------------------------------
-#print "Genome:  ", args.genome, "\n"
-name = args.genome.split('/')
-name = name[-1]
-print "\nRunning formatdb\n"
-subp.call(["formatdb", "-i", args.genome,"-p", "F", "-o", "T", "-n", args.genome])
-
-
-#-----------Run custom indexer---------------------------------------------------
-print "Running custom indexer\n"
-subp.call(["perl", path + "reads_indexer.pl", "-i", args.genome])
-
-
+#-----------Make BLAST database & Run custom indexer-----------------------------
+if args.DB:
+    print "\nRunning formatdb\n"
+    subp.call(["formatdb", "-i", args.genome,"-p", "F", "-o", "T", "-n", args.genome])
+    print "Running custom indexer\n"
+    subp.call(["perl", path + "reads_indexer.pl", "-i", args.genome])
+else:
+    print "\n", args.genome
 
 #-----------Single input file----------------------------------------------------
 
 #for single indiviual query or grouped query
 if args.q and args.i == 's' or args.i == 'g':
     print "Single input file, single or group input\n"
-    query = args.q
+    query = args.q    
     #set output filename
     blast_file_out = os.path.join(out_dir, query_name)
     runTarget(args.q, out_dir, blast_file_out)
@@ -396,6 +398,7 @@ elif args.q and args.i == 'mi':
         file_name = os.path.split(filename)[1]
         #set output directory
         blast_out = os.path.normpath(os.path.join(out_dir, file_name))
+        
         #set output filename
         blast_file_out = os.path.join(blast_out, file_name + ".blast")
         runTarget(fasta2, blast_out, blast_file_out)
