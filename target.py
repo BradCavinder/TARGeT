@@ -98,7 +98,7 @@ def runTarget(query, blast_out, blast_file_out):
         img_convert(svg_file, jpg_file)
         
     if args.S == 'Blast':
-        sys.exit("Exiting after finishing Blast stage.\nTARGeT has finished!\n")
+        return
         
     blast_in = str(blast_file_out) + ".blast"
     PHI_out = str(blast_file_out) + ".tcf"
@@ -115,7 +115,7 @@ def runTarget(query, blast_out, blast_file_out):
     img_convert(str(PHI_out) + ".tcf_drawer.svg", str(PHI_out) + ".tcf_drawer.pdf")
     
     if args.S == 'PHI':
-        sys.exit("Exiting after finishing PHI stage.\nTARGeT has finished!\n")
+        return
 
     #get query length
     query_in = open(query, "r")
@@ -192,7 +192,7 @@ def runTarget(query, blast_out, blast_file_out):
             #print "in_count - processed = ", in_count - processed, "\n"
             if args.S == 'MSA':
                 if (in_count - processed) == 0:
-                    sys.exit("Exiting after finishing MSA stage.\nTARGeT has finished!\n")
+                    return
                 else:
                     continue
 
@@ -321,13 +321,6 @@ if args.p_p == 'True':
 else:
     args.p_p = '0'
 
-#print "args.p_R end = ", args.p_R
-#print "realign end check = ", realign
-#limit the number of homologs to be drawn by PHI drawer but allow more for other steps
-#num_hom = args.p_n    
-#if num_hom > 500:
-    #num_hom = 500
-#print "args.f = ", args.f
 
 
 #-----------Create main output directory-----------------------------------------
@@ -339,10 +332,11 @@ else:
     args.o = ""
 #make the main output directory using current date and time
 now = datetime.datetime.now()
+
+
 if args.q and args.i == 's' or args.i == 'g':
-    query = args.q
-    query_name = os.path.splitext(query)[0]
-    query_name = os.path.split(query_name)[1]
+    query_no_ext = os.path.splitext(args.q)[0]
+    basedir, query_name = os.path.split(query_no_ext)
     out_dir = args.o + args.Run_Name + "_" + query_name + "_" + now.strftime("%Y_%m_%d_%H%M%S")
 else:
     out_dir = args.o + args.Run_Name + "_" + now.strftime("%Y_%m_%d_%H%M%S")
@@ -373,20 +367,21 @@ if args.q and args.i == 's' or args.i == 'g':
     print "Single input file, single or group input\n"
     #set output filename
     blast_file_out = os.path.join(out_dir, query_name)
-    runTarget(query, out_dir, blast_file_out)
+    runTarget(args.q, out_dir, blast_file_out)
     print "TARGeT has finished!"
 
 
 #for multiple individual queries-------------------------------------------------
 elif args.q and args.i == 'mi':
     print "Single input file, multiple individual inputs.\n"
-    basequery = os.path.split(args.q)
-    basedir = basequery[0]
-    #print str(args.q) + '\n', basedir + '\n'
     subp.call(["python", "split_fasta.py", args.q])
     
     #count the number of new input files
-    new_files = glob.glob(str(basedir) + "/*.fix.fa")
+    query_no_ext = os.path.splitext(args.q)[0]
+    basedir, query_name = os.path.split(query_no_ext)
+    new_files = glob.glob(query_no_ext + "_*.fa")
+    print "new files:\n", new_files
+    print str(query_no_ext).strip() + "_*.fa\n"
     count = 0
     for f in new_files:
         count += 1        
@@ -399,12 +394,11 @@ elif args.q and args.i == 'mi':
     for fasta2 in new_files:
         filename = os.path.splitext(fasta2)[0]
         file_name = os.path.split(filename)[1]
-        query = fasta2
         #set output directory
         blast_out = os.path.normpath(os.path.join(out_dir, file_name))
         #set output filename
         blast_file_out = os.path.join(blast_out, file_name + ".blast")
-        runTarget(query, blast_out, blast_file_out)
+        runTarget(fasta2, blast_out, blast_file_out)
         p += 1
         print "TARGeT has processed ", p, " of ", count, " subfiles"
 
@@ -430,8 +424,7 @@ elif args.d and args.i == 's' or args.i == 'g':
     #Run pipeline on each file with it's own output directory in the main output directory
     for f in files:
         query = os.path.normpath(os.path.join(args.d, f))
-        query_name = os.path.splitext(query)[0]
-        query_name = os.path.split(query_name)[0]
+        query_name = os.path.split(os.path.splitext(query)[0])[1]
         blast_out = os.path.normpath(os.path.join(out_dir, query_name)) #output directory
         blast_file_out = os.path.join(blast_out, query_name) #output files basename
         runTarget(query, blast_out, blast_file_out)
@@ -457,32 +450,34 @@ elif args.d and args.i == 'mi':
 
     for f in files:
         #setup name for output subdirectory for pre-split file
-        basename = os.path.normpath(os.path.join(out_dir, os.path.splitext(f)[0]))
+        base_dir = os.path.normpath(os.path.join(out_dir, os.path.splitext(f)[0]))
+        
         #make the subdirectory
-        subp.call(["mkdir", basename])
+        subp.call(["mkdir", base_dir])
 
         #setup full path to fasta file for splitting
-        full = os.path.normpath(os.path.join(args.d, f))
+        in_full = os.path.normpath(os.path.join(args.d, f))
+        in_no_ext = os.path.splitext(in_full)[0]
+        
         #split the fasta file
-        subp.call(["python", "split_fasta.py", full])
+        subp.call(["python", "split_fasta.py", in_full])
 
-    #count the number of new input files
-    new_files = glob.glob(str(basedir) + "/*.fix.fa")
-    count2 = len(new_files)
-    print count2, " subfiles to be processed"
+        #count the number of new input files
+        new_files = glob.glob(in_no_ext + "_*.fa")
+        count2 = len(new_files)
+        print count2, " subfiles to be processed"
 
-    #setup conter for subfiles processed
-    p2 = 0
+        #setup conter for subfiles processed
+        p2 = 0
 
-    #Run pipeline on each split file, output directory in subdirectory for pre-split file that's in main output directory
-    for fasta2 in new_files:
-        #set query to split file path
-        query = fasta2
-        blast_out = os.path.normpath(os.path.join(basename, os.path.split(os.path.splitext(fasta2)[0])[1]))
-        blast_file_out = os.path.normpath(os.path.join(blast_out, os.path.split(fasta2)[1]))
-        runTarget(query, blast_out, blast_file_out)
-        p2 += 1
-        print "TARGeT has processed ", p2, " of ", count2, " subfiles from file ", p + 1, " of ", count, " files"
-        p += 1
+        #Run pipeline on each split file, output directory in subdirectory for pre-split file that's in main output directory
+        for fasta2 in new_files:
+            #set query to split file path
+            blast_out = os.path.normpath(os.path.join(base_dir, os.path.split(os.path.splitext(fasta2)[0])[1]))
+            blast_file_out = os.path.normpath(os.path.join(blast_out, os.path.split(fasta2)[1]))
+            runTarget(fasta2, blast_out, blast_file_out)
+            p2 += 1
+            print "TARGeT has processed ", p2, " of ", count2, " subfiles from file ", p + 1, " of ", count, " files"
+            p += 1
         print "TARGeT has fully processed ", p, " of ", count, " files"
     print "TARGeT has finished!"
