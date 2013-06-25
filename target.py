@@ -206,7 +206,10 @@ def runTarget(query, blast_out, blast_file_out):
                     return
                 else:
                     continue
-
+            if not os.path.exists(msa_out):
+                print "MAFFT alignment failed and is most likely because of not enough RAM. Please rerun TARGeT on this query with increased RAM and/or fewer processors. TARGeT is now exiting."
+                exit(1)
+                
             #Run FastTreeMP
             print "Running FastTreeMP\n"
             tree_out = msa_out + ".nw"
