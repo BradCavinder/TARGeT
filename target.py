@@ -166,16 +166,22 @@ def runTarget(query, blast_out, blast_file_out):
         print "Entries in filter list:  ", len(filter_list), "\n"
         if len(filter_list) != 0:
             #print "in_list =\n", in_list
-            for in_path, out_path in filter_list:
+            for in_path, out_path_base in filter_list:
                 in_file = open(in_path, "r")
+                out_path = out_path_base + "_under"
+                out_path2 = out_path_base + "_over"
                 out_file = open(out_path, "w")
+                out_file2 = open(out_path2, "w")
                 for title, seq in fastaIO.FastaGeneralIterator(in_file):
                     copy_len = len(seq) - (int(args.p_f) * 2)
                     if copy_len <= (query_len * args.f):
                         print>>out_file, ">" + title + "\n" + seq
+                    else:
+                        print>>out_file2, ">" + title + "\n" + seq
                 in_list.append(out_path)
                 in_file.close()
                 out_file.close()
+                out_file2.close()
 
         #Run Mafft
         copies = 0
