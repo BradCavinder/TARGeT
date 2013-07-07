@@ -17,7 +17,6 @@ import datetime
 import glob
 import subprocess as subp
 import argparse
-import fnmatch
 import re
 import fastaIO
 
@@ -33,6 +32,7 @@ def frange(x, y, jump):
         x += jump
         continue
     return frange_list
+
 def frange_convert(frange_list):
     convert_list = []
     for i in frange_list:
@@ -188,66 +188,144 @@ def runTarget(query, blast_out, blast_file_out):
         in_count = len(in_list)
         processed = 0
         for in_path in in_list:
+            split_list = []
             in_file = open(in_path, "r")
+            
             for title, seq in fastaIO.FastaGeneralIterator(in_file):
                 copies += 1
+            in_file.close()
             print str(copies) + " copies in " + in_path, "\n"
-            msa_out = in_path + ".msa"
-            print "Running Mafft"
-            if args.Type == 'nucl':
-                MAFFT_NT(in_path, msa_out)
+            if copies >= 800:
+                print "Shuffling and splitting file for seperate alignments\n"
+                split_list = shuffle_split(in_path)
+                print "Length of split list in:", len(split_list)
+            print "Length of split list out:", len(split_list)
+            if len(split_list) > 0:
+                for path in split_list:
+                    msa_out = path + ".msa"
+                    print "Running Mafft"
+                    if args.Type == 'nucl':
+                        MAFFT_NT(path, msa_out)
+                    else:
+                        MAFFT_P(path, msa_out)
+                    if not os.path.exists(msa_out):
+                        print "MAFFT alignment failed and is most likely because of not enough RAM. Please rerun TARGeT on this query with increased RAM and/or fewer processors. TARGeT is now exiting."
+                        exit(1)
+                processed += 1
+                if args.S == 'MSA':
+                    if (in_count - processed) == 0:
+                        return
+                    else:
+                        continue
+                    
             else:
-                MAFFT_P(in_path, msa_out)
-            processed += 1
-            
-            #print "in_count - processed = ", in_count - processed, "\n"
-            if args.S == 'MSA':
-                if (in_count - processed) == 0:
-                    return
+                msa_out = in_path + ".msa"
+                print "Running Mafft"
+                if args.Type == 'nucl':
+                    MAFFT_NT(in_path, msa_out)
                 else:
-                    continue
-            if not os.path.exists(msa_out):
-                print "MAFFT alignment failed and is most likely because of not enough RAM. Please rerun TARGeT on this query with increased RAM and/or fewer processors. TARGeT is now exiting."
-                exit(1)
+                    MAFFT_P(in_path, msa_out)
+                processed += 1
+                
+                if not os.path.exists(msa_out):
+                    print "MAFFT alignment failed and is most likely because of not enough RAM. Please rerun TARGeT on this query with increased RAM and/or fewer processors. TARGeT is now exiting."
+                    exit(1)
+                #print "in_count - processed = ", in_count - processed, "\n"
+                if args.S == 'MSA':
+                    if (in_count - processed) == 0:
+                        return
+                    else:
+                        continue
+                
                 
             #Run FastTreeMP
-            print "Running FastTreeMP\n"
-            tree_out = msa_out + ".nw"
-            print "Output tree path: ", tree_out, "\n\n"
             
-            #Can only limit FastTree processor use through OMP_NUM_THREADS. Otherwise, it will use all processors available when compiled.
-            current_env = os.environ.copy()
-            #print "current_env before change:  ", current_env
-            current_env['OMP_NUM_THREADS'] = str(args.P)
-            #print "OMP_NUM_THREADS after change:  ", current_env['OMP_NUM_THREADS'], "\n\n"
+            msa_list = glob.glob(in_path + "*.msa")
+            print "FastTreeMP will run on", len(msa_list), " MSA(s)\n"
+            c = 0 
+            for msa_out in msa_list:
+                print "Running FastTreeMP on MSA", c
+                tree_out = msa_out + ".nw"
+                print "Output tree path: ", tree_out, "\n\n"
+            
+                #Can only limit FastTree processor use through OMP_NUM_THREADS. Otherwise, it will use all processors available when compiled.
+                current_env = os.environ.copy()
+                #print "current_env before change:  ", current_env
+                current_env['OMP_NUM_THREADS'] = str(args.P)
+                #print "OMP_NUM_THREADS after change:  ", current_env['OMP_NUM_THREADS'], "\n\n"
 
             
-            if args.Type == 'nucl':
-                proc = subp.Popen(["FastTreeMP", "-nt", "-gamma", "-out", tree_out, msa_out], env = current_env)
-                proc.wait()
-                print "\nFastTreeMP finished.\n"
-            else:
-                proc = subp.Popen(["FastTreeMP", "-gamma", "-out", tree_out, msa_out], env = current_env)
-                proc.wait()
-                print "\nFastTreeMP finished.\n"
+                if args.Type == 'nucl':
+                    proc = subp.Popen(["FastTreeMP", "-nt", "-gamma", "-out", tree_out, msa_out], env = current_env)
+                    proc.wait()
+                    print "\nFastTreeMP finished.\n"
+                else:
+                    proc = subp.Popen(["FastTreeMP", "-gamma", "-out", tree_out, msa_out], env = current_env)
+                    proc.wait()
+                    print "\nFastTreeMP finished.\n"
 
-            print "Converting output tree file to eps image\n"
-            out = open(tree_out + ".eps", "w") #open output file for redirected stdout
-            #print "Eps image out path: ", out
+                print "Converting output tree file to eps image\n"
+                out = open(tree_out + ".eps", "w") #open output file for redirected stdout
+                #print "Eps image out path: ", out
             
-            if copies > 45:
-                height = copies * 13
-                width = round(height/3)
-                print "Image height: ", height, "\twidth: ", width, "\n"
-                subp.call(["treebest",  "export", "-y", str(height), "-x", str(width), "-b", "4.5", "-f", "13", tree_out], stdout=out)
-            else:
-                subp.call(["treebest",  "export", tree_out], stdout=out)
-            out.close() #close output file
+                if copies > 45:
+                    height = copies * 13
+                    width = round(height/3)
+                    print "Image height: ", height, "\twidth: ", width, "\n"
+                    subp.call(["treebest",  "export", "-y", str(height), "-x", str(width), "-b", "4.5", "-f", "13", tree_out], stdout=out)
+                else:
+                    subp.call(["treebest",  "export", tree_out], stdout=out)
+                out.close() #close output file
 
-            print "Coverting eps image to pdf\n"
-            subp.call(["convert", tree_out + ".eps", tree_out + ".pdf"])
+                print "Coverting eps image to pdf\n"
+                subp.call(["convert", tree_out + ".eps", tree_out + ".pdf"])
+                c += 1
     else:
         print "Less than two copies found. Multiple alignment and tree building will not be performed.\n"
+
+def shuffle_split(fpath):
+    """Shuffle and split a fasta file into groups of ~400""" 
+    
+    import math
+    import random
+    
+    copy_list = []
+    copy_dict = {}
+    group_list = []
+    path_list = []
+    
+    in_handle = open(fpath, "r")
+    for title, seq in fastaIO.FastaGeneralIterator(in_handle):
+        title = title.strip("\n").strip()
+        copy_list.append(title)
+        copy_dict[title] = seq
+    in_handle.close()
+
+    copy_num = len(copy_list)
+    groups = int(round(copy_num/400.0))
+    copies_to_group = int(math.ceil(float(copy_num)/groups))
+    random.shuffle(copy_list)
+    
+    i = 0
+    while i < groups:
+        start = copies_to_group * i
+        end = (start + copies_to_group)-1
+        if start < copy_num:
+            if end < copy_num:
+                group_list.append(copy_list[start:end])
+            else:
+                group_list.append(copy_list[start:])
+        i += 1
+    c = 1
+    for group in group_list:
+        out_path = fpath + ".group" + str(c) + "_split"
+        path_list.append(out_path)
+        out_handle = open(out_path, "w")
+        for title in group:
+            print>>out_handle, ">" + title + "\n" + copy_dict[title]
+        out_handle.close()
+        c += 1
+    return(path_list)
             
     
 #-----------Make command line argument parser------------------------------------
