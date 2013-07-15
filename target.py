@@ -142,7 +142,7 @@ def runTarget(query, blast_out, blast_file_out):
     dna_copies_in.close()
     flank_file_path = PHI_out + ".flank"
     
-    standardize_flanks(flank_file_path, index_dict, flank, str(args.genome))
+    standardize_flanks(flank_file_path, index_dict, args.p_f, str(args.genome))
     
     if copies >= 2: 
         filter_list = []
@@ -348,6 +348,7 @@ def standardize_flanks(flank_file_path, index_dict, flank, genome_path):
         title = title.strip()
         seq_order.append(title)
         seq_dict[title] = seq
+        seq_len = len(seq)
         copy = title.split(" Query")[0]
         strand = title.split("Direction:")[1]
         strand = strand.strip()
@@ -369,7 +370,7 @@ def standardize_flanks(flank_file_path, index_dict, flank, genome_path):
             contig = title.split("Sbjct:")[1].split(" ")[0]
             locus_str = title.split("Location:(")[1].split(" - ")
             start = locus_str[0]
-            end = locus_str[1]
+            end = locus_str[1].split(")")[0]
             new_seq = sequence_retriever(genome_path, contig, start, end, flank)
             if strand == 'minus':
                 new_seq = reverse_complement(new_seq)
@@ -407,14 +408,14 @@ def sequence_retriever(genome_path, contig, start, end, flank):
         if title == contig:
             seq_len = len(seq)
             if flank < start:
-                left_coord = (start-1)-flank
+                left_coord = (int(start)-1)-flank
             else:
-                needed_left = (flank - (start-1)) + 1
+                needed_left = (flank - (int(start)-1)) + 1
                 left_coord = 0
             if seq_len - flank >= end:
-                right_coord = (end-1) + flank
+                right_coord = (int(end)-1) + flank
             else:
-                needed_right = end - ((seq_len - flank)-1)
+                needed_right = int(end) - ((seq_len - flank)-1)
                 right_coord = seq_len
             if needed_left > 0:
                 add_left = "N" * needed_left
