@@ -119,9 +119,6 @@ def runTarget(query, blast_out, blast_file_out):
     #convert svg to pdf
     print "Coverting svg image to pdf\n"
     img_convert(str(PHI_out) + ".tcf_drawer.svg", str(PHI_out) + ".tcf_drawer.pdf")
-    
-    if args.S == 'PHI':
-        return
 
     #get query length
     query_in = open(query, "r")
@@ -136,12 +133,15 @@ def runTarget(query, blast_out, blast_file_out):
     dna_copies_in = open(PHI_out + ".dna", "r")
     for title, seq in fastaIO.FastaGeneralIterator(dna_copies_in):
         copies+=1
-        index_dict[title]['left'] = seq[:10].upper()
-        index_dict[title]['right'] = seq[-10:].upper()
+        index_dict[title]['left'] = seq[:25].upper()
+        index_dict[title]['right'] = seq[-25:].upper()
     dna_copies_in.close()
     flank_file_path = PHI_out + ".flank"
     
     flank_file_path = standardize_flanks(flank_file_path, index_dict, args.p_f, str(args.genome))
+    
+    if args.S == 'PHI':
+        return
     
     if copies >= 2: 
         filter_list = []
@@ -413,14 +413,14 @@ def sequence_retriever(genome_path, contig, start, end, flank):
         if title == contig:
             contig_seq_len = len(seq)
             if flank < start:
-                left_coord = (int(start)-1)-flank
+                left_coord = (start-flank)-1
             else:
                 needed_left = (flank - (int(start)-1)) + 1
                 left_coord = 0
-            if contig_seq_len - flank >= end:
-                right_coord = (int(end)-1) + flank
+            if (contig_seq_len - flank) >= end:
+                right_coord = end + flank
             else:
-                needed_right = int(end) - ((contig_seq_len - flank)-1)
+                needed_right = end - ((contig_seq_len - flank)-1)
                 right_coord = contig_seq_len
             if needed_left > 0:
                 add_left = "N" * needed_left
