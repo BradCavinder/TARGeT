@@ -19,6 +19,7 @@ import subprocess as subp
 import argparse
 import re
 import fastaIO
+from collections import defaultdict
 
 path = sys.path[0]
 path = str(path) + "/"
@@ -98,15 +99,15 @@ def runTarget(query, blast_out, blast_file_out):
     #convert svg image to jpg
     print "Converting svg to jpg\n"
     for svg_file in glob.glob(str(blast_file_out) + "*.svg"): 
-        jpg_file = os.path.splitext(svg_file)
-        jpg_file = jpg_file[0] + ".jpg"
+        jpg_file = os.path.splitext(svg_file)[0]
+        jpg_file = jpg_file + ".jpg"
         img_convert(svg_file, jpg_file)
         
     if args.S == 'Blast':
         return
         
     blast_in = str(blast_file_out) + ".blast"
-    PHI_out = str(blast_file_out) + ".tcf"
+    PHI_out = str(blast_file_out)
     print "Running PHI"
     PHI(blast_in, PHI_out)
     print "PHI finished!\n"
@@ -129,12 +130,19 @@ def runTarget(query, blast_out, blast_file_out):
         query_len = len(seq)
     query_in.close()
     
-    #check that two or more copies were found
+    #check that two or more copies were found and setup index checker to check for correct length flanks and for the correct locus sequence
     copies = 0
+    index_dict = defaultdict(dict)
     dna_copies_in = open(PHI_out + ".dna", "r")
     for title, seq in fastaIO.FastaGeneralIterator(dna_copies_in):
         copies+=1
+        index_dict[title]['left'] = seq[:10].upper()
+        index_dict[title]['right'] = seq[-10:].upper()
+        index_dict[title]['length'] = len(seq)
     dna_copies_in.close()
+    flank_file_path = PHI_out + ".flank"
+    
+    standardize_flanks(flank_file_path, index_dict, flank, str(args.genome))
     
     if copies >= 2: 
         filter_list = []
@@ -158,9 +166,9 @@ def runTarget(query, blast_out, blast_file_out):
             if args.f > 0:
                 print "Filtering flagged for flanks\n"
                 if args.Type == 'nucl':
-                    filter_list.append([PHI_out + ".flank", PHI_out + ".flank_filter-" + str(args.f)])
+                    filter_list.append([flank_file_path, PHI_out + ".flank_filter-" + str(args.f)])
                 else:
-                    in_list.append(str(PHI_out) + ".flank")
+                    in_list.append(flank_file_path)
             else:
                 in_list.append(str(PHI_out) + ".flank")
         print "Entries in filter list:  ", len(filter_list), "\n"
@@ -248,7 +256,7 @@ def runTarget(query, blast_out, blast_file_out):
                 tree_out = msa_out + ".nw"
                 print "Output tree path: ", tree_out, "\n\n"
             
-                #Can only limit FastTree processor use through OMP_NUM_THREADS. Otherwise, it will use all processors available when compiled.
+                #Can only limit FastTree processor use through OMP_NUM_THREADS. Otherwise, it will use all processors available.
                 current_env = os.environ.copy()
                 #print "current_env before change:  ", current_env
                 current_env['OMP_NUM_THREADS'] = str(args.P)
@@ -326,8 +334,103 @@ def shuffle_split(fpath):
         out_handle.close()
         c += 1
     return(path_list)
-            
     
+def standardize_flanks(flank_file_path, index_dict, flank, genome_path):
+    """Find the index position of the start and end of the DNA match in the sequences with flanks. If either flank is not as long as the flank setting, add N's to reach that number. If the index is -1 (not found), go back into the genome sequence to get the correct locus"""
+    
+    seq_dict = {}
+    seq_order = []
+    modified = 0
+    flank_in = open(flank_file_path, "r")
+    for title, seq in fastaIO.FastaGeneralIterator(flank_in):
+        add_left = ''
+        add_right = ''
+        title = title.strip()
+        seq_order.append(title)
+        seq_dict[title] = seq
+        copy = title.split(" Query")[0]
+        strand = title.split("Direction:")[1]
+        strand = strand.strip()
+        
+        left_flank_len = seq.upper().find(index_dict[copy]['left'])
+        if left_flank_len < flank and left_flank_len != -1:
+            retry = seq.upper().find(index_dict[copy]['left'], flank-20)
+            if retry == flank:
+                left_flank_len = retry
+        
+        right_flank_index = seq.upper().rfind(index_dict[copy]['right']) 
+        right_flank_start = right_flank_index + 25 #first nt of flank, 1st nt after search string
+        if right_flank_start > (seq_len - flank) and right_flank_index != -1:
+            retry = seq.upper().rfind(index_dict[copy]['right'], 0, (seq_len - flank)+20)
+            if retry == (seq_len - flank):
+                right_flank_start = retry + 25
+        
+        if left_flank_len == -1 or right_flank_index == -1:
+            contig = title.split("Sbjct:")[1].split(" ")[0]
+            locus_str = title.split("Location:(")[1].split(" - ")
+            start = locus_str[0]
+            end = locus_str[1]
+            new_seq = sequence_retriever(genome_path, contig, start, end, flank)
+            if strand == 'minus':
+                new_seq = reverse_complement(new_seq)
+            seq_dict[title] = new_seq
+            modified += 1
+            continue
+        right_flank_len = index_dict[copy]['length'] - right_flank_start
+        if left_flank_len < flank:
+            needed_left = flank - left_flank_len
+            add_left = "N" * needed_left
+        if right_flank_len < flank:
+            needed_right = flank - right_flank_len
+            add_right = "N" * needed_right
+        if add_left or add_right:
+            new_seq = add_left + seq + add_right
+            seq_dict[title] = new_seq
+            modified += 1
+    flank_in.close()
+    if modified != 0:
+        flank_out = open(flank_file_path, "w")
+        for title in seq_order:
+            print>>flank_out, ">" + title + "\n" + seq_dict[title]
+        flank_out.close()
+
+def sequence_retriever(genome_path, contig, start, end, flank):
+    in_seq = open(genome_path, "r")
+    needed_left = 0
+    needed_right = 0
+    wanted_seq = ''
+    add_left = ''
+    add_right = ''
+    left_coord = ''
+    right_coord = ''
+    for title, seq in fastaIO.FastaGeneralIterator(in_seq):
+        if title == contig:
+            seq_len = len(seq)
+            if flank < start:
+                left_coord = (start-1)-flank
+            else:
+                needed_left = (flank - (start-1)) + 1
+                left_coord = 0
+            if seq_len - flank >= end:
+                right_coord = (end-1) + flank
+            else:
+                needed_right = end - ((seq_len - flank)-1)
+                right_coord = seq_len
+            if needed_left > 0:
+                add_left = "N" * needed_left
+            if needed_right > 0:
+                add_right = "N" * needed_right
+            wanted_seq = add_left + seq[left_coord:right_coord] + add_right
+            break
+    return(wanted_seq)
+
+def reverse_complement(seq):
+    import string
+    trans_table = string.maketrans("ATGCatgcNn", "TACGtacgNn")
+    rev_seq = seq[::-1]
+    rev_comp = rev_seq.translate(trans_table)
+    return(rev_comp)
+
 #-----------Make command line argument parser------------------------------------
 
 parser = argparse.ArgumentParser(prog='target.py', formatter_class=argparse.ArgumentDefaultsHelpFormatter, description="This is the command line implementation of TARGeT: Tree Analysis of Related Genes and Transposons (http://target.iplantcollaborative.org/). Please read the README file for program dependencies.")

@@ -41,7 +41,7 @@
 
 # 1/19/2009 version 1.4
 
-# Add a parameter to filer out putative pseudogenes
+# Add a parameter to filter out putative pseudogenes
 
 # Change copy_len to copy_score to find the best matching between queries and homologs
 
@@ -541,6 +541,16 @@ foreach(keys(%Query_Sbjct_Matches)) {
 foreach(keys(%Query_Sbjcts)) {  
 
 	$Query = $_;
+    $Query_Len = $Query_Length{$Query};
+    #if nucleotide search, set max overlap to 25% of query if less than 100
+    if($Protein == 0) {
+        $Max_overlap_temp = $Query_Len * 0.25;
+        if ($Max_overlap_temp < 100) {
+            $Max_overlap = $Max_overlap_temp;
+        }
+        else{
+            $Max_overlap = 100;
+    }
 
 	@Matched_Sbjcts = split(/ /, $Query_Sbjcts{$_});
 
@@ -649,10 +659,16 @@ foreach(keys(%Query_Sbjcts)) {
 						$New_Start = 0;
 
 					}else{
+                        #check if end of query is > end of previous query plus 10 and start of query is >10 before previous query start
+						if($Q_End > $Pre_Q_End + $Min_Gap and ($Q_Begin - $Pre_Q_Begin) > $Min_Gap) {
+                            #check if non-overlapping begining of query is longer than the overlapping sequence
+                            if (($Q_Begin - $Pre_Q_Begin) > ($Pre_Q_End - $Q_Begin)){
 
-						if($Q_End > $Pre_Q_End + $Min_Gap) {
-
-							$New_Start = 0;
+                                $New_Start = 0;
+                            }
+                            else{
+                                $New_Start = 1;
+                            }
 
 						}else{
 
@@ -798,9 +814,14 @@ foreach(keys(%Query_Sbjcts)) {
 
 					}else{
 
-						if($Pre_Q_End > $Q_End + $Min_Gap) {
-
-							$New_Start = 0;						
+						if($Pre_Q_End > $Q_End + $Min_Gap and ($Pre_Q_Begin - $Q_Begin) > $Min_Gap) {
+                            if (($Pre_Q_Begin - $Q_Begin) > ($Q_End - $Pre_Q_Begin)) {
+                                
+                                $New_Start = 0;
+                            }
+                            else{
+                                $New_Start = 1;
+                            }
 
 						}else{
 
