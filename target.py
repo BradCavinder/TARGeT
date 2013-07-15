@@ -142,7 +142,7 @@ def runTarget(query, blast_out, blast_file_out):
     dna_copies_in.close()
     flank_file_path = PHI_out + ".flank"
     
-    standardize_flanks(flank_file_path, index_dict, args.p_f, str(args.genome))
+    standardize_flanks(flank_file_path, index_dict, args.p_f, str(args.genome), query_len)
     
     if copies >= 2: 
         filter_list = []
@@ -335,7 +335,7 @@ def shuffle_split(fpath):
         c += 1
     return(path_list)
     
-def standardize_flanks(flank_file_path, index_dict, flank, genome_path):
+def standardize_flanks(flank_file_path, index_dict, flank, genome_path, seq_len):
     """Find the index position of the start and end of the DNA match in the sequences with flanks. If either flank is not as long as the flank setting, add N's to reach that number. If the index is -1 (not found), go back into the genome sequence to get the correct locus"""
     
     seq_dict = {}
@@ -450,7 +450,7 @@ parser.add_argument("Run_Name", help="Name for overall run")
 
 parser.add_argument("-o", metavar="Output path", default="Current working directory", help="Path to an existing directory for output. A subdirectory for the run will be created with further subdirectories containing the output files for each search sequence.")
 
-parser.add_argument("-i", metavar="Input query type", choices=("s", "mi", "g"), default="s", help="Number of input queries per file(s): s = single query sequence, mi = multiple individual query sequences, g = FASTA multiple sequence alignment or list of sequences; All input files/sequences must be the same type of sequence as set by -t.")
+parser.add_argument("-i", metavar="Input query type", choices=("s", "mi"), default="s", help="Number of input queries per file(s): s = single query sequence, mi = multiple individual query sequences; All input files/sequences must be the same type of sequence as set by -t.")
 
 parser.add_argument("-a", metavar="Alignments to perform", choices=("hits", "flanks", "both"), default="hits", help="Input sequences for multiple sequence alignent: hits = each copy only contains sequence that matches the query (recomended for most protein queries), flanks = each copy contains the sequences that matches the query plus flanking sequence on each side of the match for which the length is set by -p_f ")
 
@@ -557,7 +557,7 @@ else:
 
 #for single indiviual query or grouped query
 if args.q and args.i == 's' or args.i == 'g':
-    print "Single input file, single or group input\n"
+    print "Single input file, single input\n"
     query = args.q    
     #set output filename
     blast_file_out = os.path.join(out_dir, query_name)
@@ -600,9 +600,9 @@ elif args.q and args.i == 'mi':
 
 #-----------Directory input------------------------------------------------------
 
-#for single individual queries or grouped queries
+#for single individual queries
 elif args.d and args.i == 's' or args.i == 'g':
-    print "Directory input, each file has a single or group input.\n"
+    print "Directory input, each file has a single query.\n"
     
     files = os.listdir(args.d) #get all files in the directory
 
