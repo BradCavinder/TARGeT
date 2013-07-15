@@ -138,11 +138,10 @@ def runTarget(query, blast_out, blast_file_out):
         copies+=1
         index_dict[title]['left'] = seq[:10].upper()
         index_dict[title]['right'] = seq[-10:].upper()
-        index_dict[title]['length'] = len(seq)
     dna_copies_in.close()
     flank_file_path = PHI_out + ".flank"
     
-    standardize_flanks(flank_file_path, index_dict, args.p_f, str(args.genome))
+    flank_file_path = standardize_flanks(flank_file_path, index_dict, args.p_f, str(args.genome))
     
     if copies >= 2: 
         filter_list = []
@@ -342,7 +341,9 @@ def standardize_flanks(flank_file_path, index_dict, flank, genome_path):
     seq_order = []
     modified = 0
     flank_in = open(flank_file_path, "r")
-    adj_flank_path = flank_in + "_adj"
+    adj_flank_path = flank_file_path + "_adj"
+    print "In standardize_flanks, flank =", flank
+    
     for title, seq in fastaIO.FastaGeneralIterator(flank_in):
         add_left = ''
         add_right = ''
@@ -352,7 +353,7 @@ def standardize_flanks(flank_file_path, index_dict, flank, genome_path):
         copy = title.split(" Query")[0]
         strand = title.split("Direction:")[1]
         strand = strand.strip()
-        seq_len = index_dict[copy]['length']
+        seq_len = len(seq)
         
         left_flank_len = seq.upper().find(index_dict[copy]['left'])
         if left_flank_len < flank and left_flank_len != -1:
@@ -395,6 +396,9 @@ def standardize_flanks(flank_file_path, index_dict, flank, genome_path):
         for title in seq_order:
             print>>flank_out, ">" + title + "\n" + seq_dict[title]
         flank_out.close()
+        return(adj_flank_path)
+    else:
+        return(flank_file_path)
 
 def sequence_retriever(genome_path, contig, start, end, flank):
     in_seq = open(genome_path, "r")
@@ -407,17 +411,17 @@ def sequence_retriever(genome_path, contig, start, end, flank):
     right_coord = ''
     for title, seq in fastaIO.FastaGeneralIterator(in_seq):
         if title == contig:
-            seq_len = len(seq)
+            contig_seq_len = len(seq)
             if flank < start:
                 left_coord = (int(start)-1)-flank
             else:
                 needed_left = (flank - (int(start)-1)) + 1
                 left_coord = 0
-            if seq_len - flank >= end:
+            if contig_seq_len - flank >= end:
                 right_coord = (int(end)-1) + flank
             else:
-                needed_right = int(end) - ((seq_len - flank)-1)
-                right_coord = seq_len
+                needed_right = int(end) - ((contig_seq_len - flank)-1)
+                right_coord = contig_seq_len
             if needed_left > 0:
                 add_left = "N" * needed_left
             if needed_right > 0:
