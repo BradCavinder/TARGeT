@@ -348,7 +348,6 @@ def standardize_flanks(flank_file_path, index_dict, flank, genome_path, seq_len)
         title = title.strip()
         seq_order.append(title)
         seq_dict[title] = seq
-        seq_len = len(seq)
         copy = title.split(" Query")[0]
         strand = title.split("Direction:")[1]
         strand = strand.strip()
