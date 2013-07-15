@@ -550,6 +550,7 @@ foreach(keys(%Query_Sbjcts)) {
         }
         else{
             $Max_overlap = 100;
+        }
     }
 
 	@Matched_Sbjcts = split(/ /, $Query_Sbjcts{$_});
