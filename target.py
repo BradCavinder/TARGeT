@@ -142,7 +142,7 @@ def runTarget(query, blast_out, blast_file_out):
     dna_copies_in.close()
     flank_file_path = PHI_out + ".flank"
     
-    standardize_flanks(flank_file_path, index_dict, args.p_f, str(args.genome), query_len)
+    standardize_flanks(flank_file_path, index_dict, args.p_f, str(args.genome))
     
     if copies >= 2: 
         filter_list = []
@@ -335,13 +335,14 @@ def shuffle_split(fpath):
         c += 1
     return(path_list)
     
-def standardize_flanks(flank_file_path, index_dict, flank, genome_path, seq_len):
+def standardize_flanks(flank_file_path, index_dict, flank, genome_path):
     """Find the index position of the start and end of the DNA match in the sequences with flanks. If either flank is not as long as the flank setting, add N's to reach that number. If the index is -1 (not found), go back into the genome sequence to get the correct locus"""
     
     seq_dict = {}
     seq_order = []
     modified = 0
     flank_in = open(flank_file_path, "r")
+    adj_flank_path = flank_in + "_adj"
     for title, seq in fastaIO.FastaGeneralIterator(flank_in):
         add_left = ''
         add_right = ''
@@ -351,6 +352,7 @@ def standardize_flanks(flank_file_path, index_dict, flank, genome_path, seq_len)
         copy = title.split(" Query")[0]
         strand = title.split("Direction:")[1]
         strand = strand.strip()
+        seq_len = index_dict[copy]['length']
         
         left_flank_len = seq.upper().find(index_dict[copy]['left'])
         if left_flank_len < flank and left_flank_len != -1:
@@ -368,15 +370,15 @@ def standardize_flanks(flank_file_path, index_dict, flank, genome_path, seq_len)
         if left_flank_len == -1 or right_flank_index == -1:
             contig = title.split("Sbjct:")[1].split(" ")[0]
             locus_str = title.split("Location:(")[1].split(" - ")
-            start = locus_str[0]
-            end = locus_str[1].split(")")[0]
+            start = int(locus_str[0])
+            end = int(locus_str[1].split(")")[0])
             new_seq = sequence_retriever(genome_path, contig, start, end, flank)
             if strand == 'minus':
                 new_seq = reverse_complement(new_seq)
             seq_dict[title] = new_seq
             modified += 1
             continue
-        right_flank_len = index_dict[copy]['length'] - right_flank_start
+        right_flank_len = seq_len - right_flank_start
         if left_flank_len < flank:
             needed_left = flank - left_flank_len
             add_left = "N" * needed_left
@@ -389,7 +391,7 @@ def standardize_flanks(flank_file_path, index_dict, flank, genome_path, seq_len)
             modified += 1
     flank_in.close()
     if modified != 0:
-        flank_out = open(flank_file_path, "w")
+        flank_out = open(adj_flank_path, "w")
         for title in seq_order:
             print>>flank_out, ">" + title + "\n" + seq_dict[title]
         flank_out.close()
