@@ -169,7 +169,7 @@ def runTarget(query, blast_out, blast_file_out):
                 else:
                     in_list.append(flank_file_path)
             else:
-                in_list.append(str(PHI_out) + ".flank")
+                in_list.append(flank_file_path)
         print "Entries in filter list:  ", len(filter_list), "\n"
         if len(filter_list) != 0:
             #print "in_list =\n", in_list
