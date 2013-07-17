@@ -191,13 +191,13 @@ def runTarget(query, blast_out, blast_file_out):
                 out_file2.close()
 
         #Run Mafft
-        copies = 0
+        
         in_count = len(in_list)
         processed = 0
         for in_path in in_list:
             split_list = []
             in_file = open(in_path, "r")
-            
+            copies = 0            
             for title, seq in fastaIO.FastaGeneralIterator(in_file):
                 copies += 1
             in_file.close()
