@@ -672,6 +672,7 @@ elif args.d and args.i == 'mi':
         #Run pipeline on each split file, output directory in subdirectory for pre-split file that's in main output directory
         for fasta2 in new_files:
             #set query to split file path
+            query = fasta2
             blast_out = os.path.normpath(os.path.join(base_dir, os.path.split(os.path.splitext(fasta2)[0])[1]))
             blast_file_out = os.path.normpath(os.path.join(blast_out, os.path.split(fasta2)[1]))
             runTarget(fasta2, blast_out, blast_file_out)
