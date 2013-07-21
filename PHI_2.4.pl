@@ -1150,7 +1150,9 @@ foreach(keys(%Sbjct_Copies)) {
 
 				$Alignment = $Query_Sbjct_Aligns{$Query." ".$Sbjct." ".$S_Begin};
 
-				print (GF "$Alignment\n");
+				if ($Alignment) {
+                    print (GF "$Alignment\n");
+                }
 
 				$Query_Sbjct_Aligns{$Query." ".$Sbjct." ".$S_Begin} = ();
 
