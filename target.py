@@ -204,7 +204,7 @@ def runTarget(query, blast_out, blast_file_out):
             print str(copies) + " copies in " + in_path, "\n"
             if copies >= 800:
                 print "Shuffling and splitting file for seperate alignments\n"
-                split_list = shuffle_split(in_path)
+                split_list, copies = shuffle_split(in_path)
                 print "Length of split list in:", len(split_list)
             print "Length of split list out:", len(split_list)
             if len(split_list) > 0:
@@ -332,7 +332,7 @@ def shuffle_split(fpath):
             print>>out_handle, ">" + title + "\n" + copy_dict[title]
         out_handle.close()
         c += 1
-    return(path_list)
+    return(path_list, copies_to_group)
     
 def standardize_flanks(flank_file_path, index_dict, flank, genome_path):
     """Find the index position of the start and end of the DNA match in the sequences with flanks. If either flank is not as long as the flank setting, add N's to reach that number. If the index is -1 (not found), go back into the genome sequence to get the correct locus"""
