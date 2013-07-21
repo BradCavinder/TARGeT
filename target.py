@@ -279,7 +279,7 @@ def runTarget(query, blast_out, blast_file_out):
                     height = copies * 13
                     width = round(height/3)
                     print "Image height: ", height, "\twidth: ", width, "\n"
-                    subp.call(["treebest",  "export", "-y", str(height), "-x", str(width), "-b", "4.5", "-f", "13", tree_out], stdout=out)
+                    subp.call(["treebest",  "export", "-y", str(height), "-x", str(width), "-b", "4.5", "-f", "13", "-m", "40", tree_out], stdout=out)
                 else:
                     subp.call(["treebest",  "export", tree_out], stdout=out)
                 out.close() #close output file
