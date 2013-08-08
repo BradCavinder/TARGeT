@@ -128,11 +128,13 @@ def runTarget(query, blast_out, blast_file_out):
     query_in.close()
     
     #check that two or more copies were found and setup index checker to check for correct length flanks and for the correct locus sequence
+    print "Building index dict"
     copies = 0
     index_dict = defaultdict(dict)
     dna_copies_in = open(PHI_out + ".dna", "r")
     for title, seq in fastaIO.FastaGeneralIterator(dna_copies_in):
         copies+=1
+        print "Seq_name:", title, "\nSeq_len:", len(seq), "\n"
         index_dict[title]['left'] = seq[:25].upper()
         index_dict[title]['right'] = seq[-25:].upper()
     dna_copies_in.close()
@@ -350,21 +352,20 @@ def standardize_flanks(flank_file_path, index_dict, flank, genome_path):
         title = title.strip()
         seq_order.append(title)
         seq_dict[title] = seq
-        copy = title.split(" Query")[0]
         strand = title.split("Direction:")[1]
         strand = strand.strip()
         seq_len = len(seq)
         
-        left_flank_len = seq.upper().find(index_dict[copy]['left'])
+        left_flank_len = seq.upper().find(index_dict[title]['left'])
         if left_flank_len < flank and left_flank_len != -1:
-            retry = seq.upper().find(index_dict[copy]['left'], flank-20)
+            retry = seq.upper().find(index_dict[title]['left'], flank-20)
             if retry == flank:
                 left_flank_len = retry
         
-        right_flank_index = seq.upper().rfind(index_dict[copy]['right']) 
+        right_flank_index = seq.upper().rfind(index_dict[title]['right']) 
         right_flank_start = right_flank_index + 25 #first nt of flank, 1st nt after search string
         if right_flank_start > (seq_len - flank) and right_flank_index != -1:
-            retry = seq.upper().rfind(index_dict[copy]['right'], 0, (seq_len - flank)+20)
+            retry = seq.upper().rfind(index_dict[title]['right'], 0, (seq_len - flank)+20)
             if retry == (seq_len - flank):
                 right_flank_start = retry + 25
         
