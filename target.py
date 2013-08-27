@@ -65,7 +65,7 @@ def PHI(blast_in, PHI_out):
     subp.call(["perl", path + "PHI_2.4.pl", "-i", blast_in, "-q", query, "-D", args.genome, "-o", PHI_out, "-e", str(args.p_e), "-M", str(args.p_M), "-P", Type, "-d", str(args.p_d), "-g", str(args.p_g), "-n", str(args.p_n), "-c", str(args.p_c), "-G", str(args.p_G), "-t", str(args.p_t), "-f", str(args.p_f), "-p", args.p_p, "-R", realign])
 
 def PHI_draw(PHI_out, Type):
-    subp.call(["perl", path + "PHI_drawer2.pl", "-i", str(PHI_out) + ".list", "-o", str(PHI_out) + ".tcf_drawer", "-m", args.p_t, "-P", Type, "-n", str(1000)])
+    subp.call(["perl", path + "PHI_drawer2.pl", "-i", str(PHI_out) + ".list", "-o", str(PHI_out) + ".tcf_drawer", "-m", args.p_t, "-P", Type, "-n", str(800)])
 
 def MAFFT_NT(in_path, out_path):
     subp.call(["mafft", "--ep", "0.75", "--op", "3.0", "--thread",  str(args.P), "--localpair", "--maxiterate",  "4", "--out", out_path, in_path])
@@ -355,17 +355,20 @@ def standardize_flanks(flank_file_path, index_dict, flank, genome_path):
         strand = title.split("Direction:")[1]
         strand = strand.strip()
         seq_len = len(seq)
+        name = title
+        if args.Type == 'nucl':
+            name = title.split(' ')[0]
         
-        left_flank_len = seq.upper().find(index_dict[title]['left'])
+        left_flank_len = seq.upper().find(index_dict[name]['left'])
         if left_flank_len < flank and left_flank_len != -1:
-            retry = seq.upper().find(index_dict[title]['left'], flank-20)
+            retry = seq.upper().find(index_dict[name]['left'], flank-20)
             if retry == flank:
                 left_flank_len = retry
         
-        right_flank_index = seq.upper().rfind(index_dict[title]['right']) 
+        right_flank_index = seq.upper().rfind(index_dict[name]['right']) 
         right_flank_start = right_flank_index + 25 #first nt of flank, 1st nt after search string
         if right_flank_start > (seq_len - flank) and right_flank_index != -1:
-            retry = seq.upper().rfind(index_dict[title]['right'], 0, (seq_len - flank)+20)
+            retry = seq.upper().rfind(index_dict[name]['right'], 0, (seq_len - flank)+20)
             if retry == (seq_len - flank):
                 right_flank_start = retry + 25
         
