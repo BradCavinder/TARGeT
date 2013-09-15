@@ -293,7 +293,7 @@ def runTarget(query, blast_out, blast_file_out):
         print "Less than two copies found. Multiple alignment and tree building will not be performed.\n"
 
 def shuffle_split(fpath):
-    """Shuffle and split a fasta file into groups of ~450""" 
+    """Shuffle and split a fasta file into groups of ~400""" 
     
     import math
     import random
@@ -311,7 +311,7 @@ def shuffle_split(fpath):
     in_handle.close()
 
     copy_num = len(copy_list)
-    groups = int(round(copy_num/450.0))
+    groups = int(round(copy_num/400.0))
     copies_to_group = int(math.ceil(float(copy_num)/groups))
     random.shuffle(copy_list)
     
