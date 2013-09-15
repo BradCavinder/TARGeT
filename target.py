@@ -204,7 +204,7 @@ def runTarget(query, blast_out, blast_file_out):
                 copies += 1
             in_file.close()
             print str(copies) + " copies in " + in_path, "\n"
-            if copies >= 1000:
+            if copies >= 800:
                 print "Shuffling and splitting file for seperate alignments\n"
                 split_list, copies = shuffle_split(in_path)
                 print "Length of split list in:", len(split_list)
@@ -293,7 +293,7 @@ def runTarget(query, blast_out, blast_file_out):
         print "Less than two copies found. Multiple alignment and tree building will not be performed.\n"
 
 def shuffle_split(fpath):
-    """Shuffle and split a fasta file into groups of ~400""" 
+    """Shuffle and split a fasta file into groups of ~450""" 
     
     import math
     import random
@@ -311,7 +311,7 @@ def shuffle_split(fpath):
     in_handle.close()
 
     copy_num = len(copy_list)
-    groups = int(round(copy_num/500.0))
+    groups = int(round(copy_num/450.0))
     copies_to_group = int(math.ceil(float(copy_num)/groups))
     random.shuffle(copy_list)
     
@@ -414,7 +414,8 @@ def sequence_retriever(genome_path, contig, start, end, flank):
     left_coord = ''
     right_coord = ''
     for title, seq in fastaIO.FastaGeneralIterator(in_seq):
-        if title == contig:
+        title2 = title.split(" ")[0]
+        if title2 == contig:
             contig_seq_len = len(seq)
             if flank < start:
                 left_coord = (start-flank)-1
