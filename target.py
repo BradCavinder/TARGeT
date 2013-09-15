@@ -140,7 +140,15 @@ def runTarget(query, blast_out, blast_file_out):
     dna_copies_in.close()
     flank_file_path = PHI_out + ".flank"
     
-    flank_file_path = standardize_flanks(flank_file_path, index_dict, args.p_f, str(args.genome))
+    genome_dict = {}
+    genome_in = open(str(args.genome), "r")
+    for title, seq in fastaIO.FastaGeneralIterator(genome_in):
+        title2 = title.split(" ")[0]
+        genome_dict[title2] = seq
+    genome_in.close()
+    
+    
+    flank_file_path = standardize_flanks(flank_file_path, index_dict, args.p_f, genome_dict)
     
     if args.S == 'PHI':
         return
@@ -336,7 +344,7 @@ def shuffle_split(fpath):
         c += 1
     return(path_list, copies_to_group)
     
-def standardize_flanks(flank_file_path, index_dict, flank, genome_path):
+def standardize_flanks(flank_file_path, index_dict, flank, genome_dict2):
     """Find the index position of the start and end of the DNA match in the sequences with flanks. If either flank is not as long as the flank setting, add N's to reach that number. If the index is -1 (not found), go back into the genome sequence to get the correct locus"""
     
     seq_dict = {}
@@ -377,7 +385,7 @@ def standardize_flanks(flank_file_path, index_dict, flank, genome_path):
             locus_str = title.split("Location:(")[1].split(" - ")
             start = int(locus_str[0])
             end = int(locus_str[1].split(")")[0])
-            new_seq = sequence_retriever(genome_path, contig, start, end, flank)
+            new_seq = sequence_retriever(genome_dict2, contig, start, end, flank)
             if strand == 'minus':
                 new_seq = reverse_complement(new_seq)
             seq_dict[title] = new_seq
@@ -404,8 +412,7 @@ def standardize_flanks(flank_file_path, index_dict, flank, genome_path):
     else:
         return(flank_file_path)
 
-def sequence_retriever(genome_path, contig, start, end, flank):
-    in_seq = open(genome_path, "r")
+def sequence_retriever(genome_dict3, contig, start, end, flank):
     needed_left = 0
     needed_right = 0
     wanted_seq = ''
@@ -413,26 +420,25 @@ def sequence_retriever(genome_path, contig, start, end, flank):
     add_right = ''
     left_coord = ''
     right_coord = ''
-    for title, seq in fastaIO.FastaGeneralIterator(in_seq):
-        title2 = title.split(" ")[0]
-        if title2 == contig:
-            contig_seq_len = len(seq)
-            if flank < start:
-                left_coord = (start-flank)-1
-            else:
-                needed_left = (flank - (int(start)-1)) + 1
-                left_coord = 0
-            if (contig_seq_len - flank) >= end:
-                right_coord = end + flank
-            else:
-                needed_right = end - ((contig_seq_len - flank)-1)
-                right_coord = contig_seq_len
-            if needed_left > 0:
-                add_left = "N" * needed_left
-            if needed_right > 0:
-                add_right = "N" * needed_right
-            wanted_seq = add_left + seq[left_coord:right_coord] + add_right
-            break
+    if contig in genome_dict3:
+        seq = genome_dict3[contig]
+        contig_seq_len = len(seq)
+        if flank < start:
+            left_coord = (start-flank)-1
+        else:
+            needed_left = (flank - (int(start)-1)) + 1
+            left_coord = 0
+        if (contig_seq_len - flank) >= end:
+            right_coord = end + flank
+        else:
+            needed_right = end - ((contig_seq_len - flank)-1)
+            right_coord = contig_seq_len
+        if needed_left > 0:
+            add_left = "N" * needed_left
+        if needed_right > 0:
+            add_right = "N" * needed_right
+        wanted_seq = add_left + seq[left_coord:right_coord] + add_right
+        
     return(wanted_seq)
 
 def reverse_complement(seq):
