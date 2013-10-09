@@ -51,6 +51,8 @@ def FastaTitleStandardization(handle):
     for title, seq in FastaGeneralIterator(handle):
         #Remove whitespace and special characters except '-' from title and shorten it to no more than 100 characters
         title = title.replace(":", "-")
+        title = title.replace("(", "-")
+        title = title.replace(")", "-")
         title = title.replace("=", "-")
         title = pattern.sub("_", title)
         title = title.replace('___', '_')
@@ -60,4 +62,13 @@ def FastaTitleStandardization(handle):
             title = title[:99]
         title = title.replace(" ", "")
         yield (title, seq)
-            
+
+def median(in_list):
+    #if list has even number of elements, take the avg of middle two
+    #otherwise return middle elemenent
+    in_list.sort()
+    mid = len(in_list)/2
+    if len(alist) % 2 == 0:  
+        return (srtd[mid-1] + srtd[mid]) / 2.0
+    else:
+        return in_list[mid]            
