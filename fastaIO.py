@@ -68,7 +68,7 @@ def median(in_list):
     #otherwise return middle elemenent
     in_list.sort()
     mid = len(in_list)/2
-    if len(alist) % 2 == 0:  
+    if len(in_list) % 2 == 0:  
         return (srtd[mid-1] + srtd[mid]) / 2.0
     else:
         return in_list[mid]            
