@@ -29,6 +29,12 @@ Installation
 TARGeT itself does not require installation as it consists of Python and Perl scripts that do not need to be compiled or installed. The dependencies above do need to be installed per each program's own instructions, adding them to your PATH manually if needed. TARGeT needs to be run from its own directory, containing the Python and Perl scripts and the BLOSUM matrix files.
 
 
+Usage help
+==========
+The following command (without the single quatation marks) will return a long help message explaining all the options for running TARGeT:
+'python target.py -h' (or just 'target.py -h' if you've added the script to your PATH). Entering only 'python target.py' will return a brief usage statement.
+
+
 Change Log
 ==========
 
@@ -36,6 +42,8 @@ Change Log
 
    MAFFT has replaced MUSCLE for multiple sequence alignments, and FastTreeMP is now used for tree building with TreeBest still being used to convert the tree file to an EPS image.
    TARGeT can now use multiple processors for the Blast, MAFFT, and FastTree step, leaving the PHI step as the longest running single processor step. The run times for the remaining single processor steps are generally very short.
+     - AUG2013 through 08OCT2013 - minor updates 
+   Several minor changes were made to improve performance. Version designation being kept at 2.00.
 
 
 1.1 - 09JUN2013 - Multiple bug fixes. Removed the need for Python packages pyfasta and setuptools.
