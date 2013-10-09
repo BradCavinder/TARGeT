@@ -31,7 +31,7 @@ TARGeT itself does not require installation as it consists of Python and Perl sc
 
 Usage help
 ==========
-The following command (without the single quatation marks) will return a long help message explaining all the options for running TARGeT:
+The following command (without the single quotation marks) will return a long help message explaining all the options for running TARGeT:
 'python target.py -h' (or just 'target.py -h' if you've added the script to your PATH). Entering only 'python target.py' will return a brief usage statement.
 
 
