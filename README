@@ -43,7 +43,7 @@ Change Log
    MAFFT has replaced MUSCLE for multiple sequence alignments, and FastTreeMP is now used for tree building with TreeBest still being used to convert the tree file to an EPS image.
    TARGeT can now use multiple processors for the Blast, MAFFT, and FastTree step, leaving the PHI step as the longest running single processor step. The run times for the remaining single processor steps are generally very short.
      - AUG2013 through 08OCT2013 - minor updates 
-   Several minor changes were made to improve performance. Version designation being kept at 2.00.
+   Several minor changes were made to improve performance. Version designation being kept at 2.00. Of particular note, queries returning >= 800 hits will be split into ~400 copy groups for multiple sequence alignment.
 
 
 1.1 - 09JUN2013 - Multiple bug fixes. Removed the need for Python packages pyfasta and setuptools.
