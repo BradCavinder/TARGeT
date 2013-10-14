@@ -14,6 +14,7 @@ import os
 import os.path
 import sys
 import datetime
+import time
 import glob
 import subprocess as subp
 import argparse
@@ -73,7 +74,7 @@ def MAFFT_NT(in_path, out_path):
 def MAFFT_P(in_path, out_path):
     subp.call(["mafft", "--thread",  str(args.P), "--maxiterate",  "100", "--out", out_path, in_path])
 
-def runTarget(query, blast_out, blast_file_out):
+def runTarget(query, blast_out, blast_file_out, path):
     #make output directory
     subp.call(["mkdir", blast_out])
     
@@ -81,7 +82,7 @@ def runTarget(query, blast_out, blast_file_out):
     log_out = open(os.path.join(blast_out, "log.txt"), "w")
     print>>log_out, " ".join(sys.argv)
     log_out.close()
-
+    
     #use blastn if DNA
     if args.Type == 'nucl':
         print "Using BLASTN\n"
@@ -91,7 +92,7 @@ def runTarget(query, blast_out, blast_file_out):
     elif args.Type == 'prot':
         print "Using TBLASTN\n"
         TBLASTN(query, blast_file_out)
-
+        
     #make svg drawing(s)
     print "Making svg image of blast results\n"
     Blast_draw(blast_file_out)
@@ -105,13 +106,24 @@ def runTarget(query, blast_out, blast_file_out):
         
     if args.S == 'Blast':
         return
-        
+    
     blast_in = str(blast_file_out) + ".blast"
     PHI_out = str(blast_file_out)
     print "Running PHI"
     PHI(blast_in, PHI_out)
     print "PHI finished!\n"
-
+    
+    filter_list = str(blast_file_out) + ".list"
+    print "filter list path:", filter_list
+    filter_path = os.path.join(path, "parse_target_list.py")
+    print "filter script path:", filter_path
+    
+    print args.E
+    if args.E:
+        print "E is true!"
+        subp.call(["python", filter_path, filter_list])
+        time.sleep(1)
+    
     #make svg image of PHI homologs
     print "Making svg image of homologs\n"
     PHI_draw(PHI_out, Type)
@@ -134,7 +146,7 @@ def runTarget(query, blast_out, blast_file_out):
     dna_copies_in = open(PHI_out + ".dna", "r")
     for title, seq in fastaIO.FastaGeneralIterator(dna_copies_in):
         copies+=1
-        print "Seq_name:", title, "\nSeq_len:", len(seq), "\n"
+        #print "Seq_name:", title, "\nSeq_len:", len(seq), "\n"
         index_dict[title]['left'] = seq[:25].upper()
         index_dict[title]['right'] = seq[-25:].upper()
     dna_copies_in.close()
@@ -299,6 +311,9 @@ def runTarget(query, blast_out, blast_file_out):
                 c += 1
     else:
         print "Less than two copies found. Multiple alignment and tree building will not be performed.\n"
+
+#def filter_blast(blast_in):
+    
 
 def shuffle_split(fpath):
     """Shuffle and split a fasta file into groups of ~400""" 
@@ -474,6 +489,8 @@ parser.add_argument("-f", metavar="Filter length (query length * X)", type=float
 
 parser.add_argument("-P", metavar="Processors", type=int, default=1, help="The number of processors to use for Blast, Mafft, and FastTree steps. All other steps use 1 processor. The programs are not multi-node ready, so the number of processors is limited to that available to one computer/node.")
 
+parser.add_argument("-E", action='store_true', default="False", help="Require hits to match the ends of the query sequence.")
+
 parser.add_argument("-S", metavar="Stopping point", type=str, choices=("Blast", "PHI", "MSA", "Tree"), default="Tree", help="The stage, after completion, to stop the program. By default, all stages (Blast, PHI, MSA, Tree) are run. For example if you want to stop the program after Blast and PHI, exiting before the MSA stage, enter PHI.")
 
 parser.add_argument("-DB", action='store_false', default="True", help="Skip formatDB and custom indexing. These steps are required for the first search against a genome. If the genome sequence file is changed in any way, these steps will need to be performed again. Otherwise, you may use this flag to skip these steps. By default, the steps are always performed")
@@ -520,6 +537,7 @@ parser_phi.add_argument("-p_p", action='store_true', help="Filter out psuedogene
 
 args = parser.parse_args()
 
+print args
 #change arguments to usable forms or make new assignment
 realign = '0'
 #print "realign before = ", realign
@@ -577,7 +595,7 @@ if args.q and args.i == 's' or args.i == 'g':
     query = args.q    
     #set output filename
     blast_file_out = os.path.join(out_dir, query_name)
-    runTarget(args.q, out_dir, blast_file_out)
+    runTarget(args.q, out_dir, blast_file_out, path)
     print "TARGeT has finished!"
 
 
@@ -608,7 +626,7 @@ elif args.q and args.i == 'mi':
         
         #set output filename
         blast_file_out = os.path.join(blast_out, file_name + ".blast")
-        runTarget(fasta2, blast_out, blast_file_out)
+        runTarget(fasta2, blast_out, blast_file_out, path)
         p += 1
         print "TARGeT has processed ", p, " of ", count, " subfiles"
 
@@ -637,7 +655,7 @@ elif args.d and args.i == 's' or args.i == 'g':
         query_name = os.path.split(os.path.splitext(query)[0])[1]
         blast_out = os.path.normpath(os.path.join(out_dir, query_name)) #output directory
         blast_file_out = os.path.join(blast_out, query_name) #output files basename
-        runTarget(query, blast_out, blast_file_out)
+        runTarget(query, blast_out, blast_file_out, path)
         p +=1
         print "TARGeT has processed ", p, " of ", count, " files"
     print "TARGeT has finished!"
@@ -686,7 +704,7 @@ elif args.d and args.i == 'mi':
             query = fasta2
             blast_out = os.path.normpath(os.path.join(base_dir, os.path.split(os.path.splitext(fasta2)[0])[1]))
             blast_file_out = os.path.normpath(os.path.join(blast_out, os.path.split(fasta2)[1]))
-            runTarget(fasta2, blast_out, blast_file_out)
+            runTarget(fasta2, blast_out, blast_file_out, path)
             p2 += 1
             print "TARGeT has processed ", p2, " of ", count2, " subfiles from file ", p + 1, " of ", count, " files"
             p += 1
