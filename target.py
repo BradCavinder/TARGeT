@@ -66,7 +66,7 @@ def PHI(blast_in, PHI_out):
     subp.call(["perl", path + "PHI_2.4.pl", "-i", blast_in, "-q", query, "-D", args.genome, "-o", PHI_out, "-e", str(args.p_e), "-M", str(args.p_M), "-P", Type, "-d", str(args.p_d), "-g", str(args.p_g), "-n", str(args.p_n), "-c", str(args.p_c), "-G", str(args.p_G), "-t", str(args.p_t), "-f", str(args.p_f), "-p", args.p_p, "-R", realign])
 
 def PHI_draw(PHI_out, Type):
-    subp.call(["perl", path + "PHI_drawer2.pl", "-i", str(PHI_out) + ".list", "-o", str(PHI_out) + ".tcf_drawer", "-m", args.p_t, "-P", Type, "-n", str(800)])
+    subp.call(["perl", path + "PHI_drawer2.pl", "-i", str(PHI_out) + ".list", "-o", str(PHI_out) + ".tcf_drawer", "-m", args.p_t, "-P", Type, "-n", str(600)])
 
 def MAFFT_NT(in_path, out_path):
     subp.call(["mafft", "--ep", "0.75", "--op", "3.0", "--thread",  str(args.P), "--localpair", "--maxiterate",  "4", "--out", out_path, in_path])
@@ -537,7 +537,7 @@ parser_phi.add_argument("-p_p", action='store_true', help="Filter out psuedogene
 
 args = parser.parse_args()
 
-print args
+#print args
 #change arguments to usable forms or make new assignment
 realign = '0'
 #print "realign before = ", realign
