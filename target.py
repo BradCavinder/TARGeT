@@ -118,10 +118,10 @@ def runTarget(query, blast_out, blast_file_out, path):
     filter_path = os.path.join(path, "parse_target_list.py")
     print "filter script path:", filter_path
     
-    print args.E
-    if args.E:
-        print "E is true!"
-        subp.call(["python", filter_path, filter_list])
+    #print args.E
+    if args.E == True:
+        #print "E is true!"
+        subp.call(["python", filter_path, filter_list, args.W])
         time.sleep(1)
     
     #make svg image of PHI homologs
@@ -224,7 +224,7 @@ def runTarget(query, blast_out, blast_file_out, path):
                 copies += 1
             in_file.close()
             print str(copies) + " copies in " + in_path, "\n"
-            if copies >= 800:
+            if copies >= 601:
                 print "Shuffling and splitting file for seperate alignments\n"
                 split_list, copies = shuffle_split(in_path)
                 print "Length of split list in:", len(split_list)
@@ -316,7 +316,7 @@ def runTarget(query, blast_out, blast_file_out, path):
     
 
 def shuffle_split(fpath):
-    """Shuffle and split a fasta file into groups of ~400""" 
+    """Shuffle and split a fasta file into groups of ~350""" 
     
     import math
     import random
@@ -334,7 +334,7 @@ def shuffle_split(fpath):
     in_handle.close()
 
     copy_num = len(copy_list)
-    groups = int(round(copy_num/400.0))
+    groups = int(round(copy_num/350.0))
     copies_to_group = int(math.ceil(float(copy_num)/groups))
     random.shuffle(copy_list)
     
@@ -489,7 +489,9 @@ parser.add_argument("-f", metavar="Filter length (query length * X)", type=float
 
 parser.add_argument("-P", metavar="Processors", type=int, default=1, help="The number of processors to use for Blast, Mafft, and FastTree steps. All other steps use 1 processor. The programs are not multi-node ready, so the number of processors is limited to that available to one computer/node.")
 
-parser.add_argument("-E", action='store_true', default="False", help="Require hits to match the ends of the query sequence.")
+parser.add_argument("-E", action='store_true', default="False", help="Require hits to match the ends of the query sequence. The -W flag modifies the distance from the ends a hit can be and satisfy this flag. Using this flag alone is equivalent to '-E -W 0'.")
+
+parser.add_argument("-W", metavar="Window size", type=int, default=0, help="Maximum distance away from query ends for a hit to be considered matching the ends. Only used if the -E flag is set. The default value of 0 requires a hit to start and stop at the first and last characters of the query. A value of 4 would consider hits starting within the first 5 and ending within the last 5 characters of the query as matches to the ends.")
 
 parser.add_argument("-S", metavar="Stopping point", type=str, choices=("Blast", "PHI", "MSA", "Tree"), default="Tree", help="The stage, after completion, to stop the program. By default, all stages (Blast, PHI, MSA, Tree) are run. For example if you want to stop the program after Blast and PHI, exiting before the MSA stage, enter PHI.")
 
