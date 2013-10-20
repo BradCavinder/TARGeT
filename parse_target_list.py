@@ -26,7 +26,7 @@ for line in info:
     #print line_split
     query_len = int(line_split[0].split(" ")[2])
     query_start = int(line_split[1].split(" ")[0])
-    query_end = line_split[-1].split(" ")[1]
+    query_end = int(line_split[-1].split(" ")[1])
     #print "query_len:", query_len, "query_start:", query_start, "query_end:", query_end
     if query_start <= (1 + window) and query_end >= (query_len - window):
         match.append(line + "  ")
