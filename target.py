@@ -121,7 +121,7 @@ def runTarget(query, blast_out, blast_file_out, path):
     #print args.E
     if args.E == True:
         #print "E is true!"
-        subp.call(["python", filter_path, filter_list, args.W])
+        subp.call(["python", filter_path, filter_list, str(args.W)])
         time.sleep(1)
     
     #make svg image of PHI homologs
