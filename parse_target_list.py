@@ -24,7 +24,7 @@ for line in info:
     line_split = line.split("  ")
     #print "line split:"
     #print line_split
-    query_len = line_split[0].split(" ")[2]
+    query_len = int(line_split[0].split(" ")[2])
     query_start = int(line_split[1].split(" ")[0])
     query_end = line_split[-1].split(" ")[1]
     #print "query_len:", query_len, "query_start:", query_start, "query_end:", query_end
