@@ -121,9 +121,11 @@ def runTarget(query, blast_out, blast_file_out, path):
     #print args.E
     if args.E == True:
         #print "E is true!"
-        subp.call(["cp", filter_list, filter_list + "_ori"])
+        subp.call(["cp", filter_list, filter_list + "_ori.list"])
         subp.call(["python", filter_path, filter_list, str(args.W)])
         time.sleep(1)
+        PHI_draw(filter_list + "_ori", Type)
+        img_convert(filter_list + "_ori" + ".tcf_drawer.svg", filter_list + "_ori" + ".tcf_drawer.pdf")
     
     #make svg image of PHI homologs
     print "Making svg image of homologs\n"
