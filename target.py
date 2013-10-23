@@ -458,9 +458,7 @@ def sequence_retriever(genome_dict3, contig, start, end, flank):
         if needed_right > 0:
             add_right = "N" * needed_right
         wanted_seq = add_left + seq[left_coord:right_coord] + add_right
-    else:
-        
-        
+
     return(wanted_seq)
 
 def reverse_complement(seq):
