@@ -162,7 +162,6 @@ def runTarget(query, blast_out, blast_file_out, path):
         genome_dict[title2] = seq
     genome_in.close()
     
-    
     flank_file_path = standardize_flanks(flank_file_path, index_dict, args.p_f, genome_dict)
     
     if args.S == 'PHI':
@@ -384,19 +383,22 @@ def standardize_flanks(flank_file_path, index_dict, flank, genome_dict2):
         name = title
         if args.Type == 'nucl':
             name = title.split(' ')[0]
-        
-        left_flank_len = seq.upper().find(index_dict[name]['left'])
-        if left_flank_len < flank and left_flank_len != -1:
-            retry = seq.upper().find(index_dict[name]['left'], flank-20)
-            if retry == flank:
-                left_flank_len = retry
-        
-        right_flank_index = seq.upper().rfind(index_dict[name]['right']) 
-        right_flank_start = right_flank_index + 25 #first nt of flank, 1st nt after search string
-        if right_flank_start > (seq_len - flank) and right_flank_index != -1:
-            retry = seq.upper().rfind(index_dict[name]['right'], 0, (seq_len - flank)+20)
-            if retry == (seq_len - flank):
-                right_flank_start = retry + 25
+        if not seq_len or seq_len == 0:
+            left_flank_len = -1
+            right_flank_index = -1
+        else:    
+            left_flank_len = seq.upper().find(index_dict[name]['left'])
+            if left_flank_len < flank and left_flank_len != -1:
+                retry = seq.upper().find(index_dict[name]['left'], flank-20)
+                if retry == flank:
+                    left_flank_len = retry
+            
+            right_flank_index = seq.upper().rfind(index_dict[name]['right']) 
+            right_flank_start = right_flank_index + 25 #first nt of flank, 1st nt after search string
+            if right_flank_start > (seq_len - flank) and right_flank_index != -1:
+                retry = seq.upper().rfind(index_dict[name]['right'], 0, (seq_len - flank)+20)
+                if retry == (seq_len - flank):
+                    right_flank_start = retry + 25
         
         if left_flank_len == -1 or right_flank_index == -1:
             contig = title.split("Sbjct:")[1].split(" ")[0]
@@ -456,6 +458,8 @@ def sequence_retriever(genome_dict3, contig, start, end, flank):
         if needed_right > 0:
             add_right = "N" * needed_right
         wanted_seq = add_left + seq[left_coord:right_coord] + add_right
+    else:
+        
         
     return(wanted_seq)
 
