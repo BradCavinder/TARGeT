@@ -35,23 +35,26 @@ def frange(x, y, jump):
         continue
     return frange_list
 
-def frange_convert(frange_list):
+def frange_convert(frange_list, mode):
     convert_list = []
     for i in frange_list:
         i = str(i)
-        i = i[:4]
+        if mode == 1:
+            i = i[:4]
+        elif mode == 2:
+            i = i[:5]
         convert_list.append(float(i))
     return convert_list
 
 #setup available floating point options
-ident_list1 = frange(0.01, 1, 0.01)
-ident_list2 = frange_convert(ident_list1)
+ident_list1 = frange(0.001, 1, 0.001)
+ident_list2 = frange_convert(ident_list1, 2)
 ident_list3 = frange(0, 10, 0.01)
-ident_list4 = frange_convert(ident_list3)
+ident_list4 = frange_convert(ident_list3, 1)
     
 
 def BLASTN(query, blast_file_out):
-    subp.call(["blastall", "-p", "blastn", "-d", str(args.genome), "-i", query, "-o", str(blast_file_out) + ".blast", "-e", str(args.b_e), "-b", str(args.b_a), "-v", str(args.b_d), "-a", str(args.P)])
+    subp.call(["blastall", "-p", "blastn", "-F", "F", "-m", "0", "-d", str(args.genome), "-i", query, "-o", str(blast_file_out) + ".blast", "-e", str(args.b_e), "-b", str(args.b_a), "-v", str(args.b_d), "-a", str(args.P)])
 
 def TBLASTN(query, blast_file_out):
     subp.call(["blastall", "-p", "tblastn", "-F", "F", "-m", "0", "-d", str(args.genome), "-i", query, "-o", str(blast_file_out) + ".blast", "-e", str(args.b_e), "-b", str(args.b_a), "-v", str(args.b_d), "-a", str(args.P)])
