@@ -2114,7 +2114,7 @@ foreach(keys(%Sbjct_Copies)) {
 
 							if(!(defined($Q_L_AAs[$k]))) {
 
-								print "$Query\t$Sbjct\n@Matches\n";
+								#print "$Query\t$Sbjct\n@Matches\n";
 
 								exit(0);
 
@@ -2122,7 +2122,7 @@ foreach(keys(%Sbjct_Copies)) {
 
 							if(!(defined($S_L_AAs[$k]))) {
 
-								print "$Query\t$Sbjct\n@Matches\n";
+								#print "$Query\t$Sbjct\n@Matches\n";
 
 								exit(0);
 
@@ -2158,7 +2158,7 @@ foreach(keys(%Sbjct_Copies)) {
 
 							if(!(defined($Q_R_AAs[$OverlaP_R - $k - 1]))) {
 
-								print "$Query\t$Sbjct\n@Matches\n";
+								#print "$Query\t$Sbjct\n@Matches\n";
 
 								exit(0);
 
@@ -2166,7 +2166,7 @@ foreach(keys(%Sbjct_Copies)) {
 
 							if(!(defined($S_R_AAs[$OverlaP_R - $k - 1]))) {
 
-								print "$Query\t$Sbjct\n@Matches\n";
+								#print "$Query\t$Sbjct\n@Matches\n";
 
 								exit(0);
 
@@ -3172,9 +3172,9 @@ sub redundancy_match_filter {
 
 						if(!(defined($AA_Score{$Q_AA." ".$S_AA}))) {
 
-							print "$Q_AA. .$S_AA\n";
+							#print "$Q_AA. .$S_AA\n";
 
-							print "$Query, $Sbjct, @Matches, \n $Q_Begin, $Q_End, $S_Begin, $S_End, $Frame\n";
+							#print "$Query, $Sbjct, @Matches, \n $Q_Begin, $Q_End, $S_Begin, $S_End, $Frame\n";
 
 							exit(0);
 
