@@ -263,10 +263,13 @@ open(QF, "$Query_File")||die "$!\n";
 while(<QF>) {
 
 	$Line = $_;
+    
+    #print "$Line\n";
 
 	if(/^>(\S+)/) {
 
 		$Name = $1;
+        print "$Line\n";
 
 	}else{
 
@@ -285,7 +288,8 @@ close(QF);
 foreach(keys(%Query_Name_Seq)) {
 
 	$Query_Length{$_} = length($Query_Name_Seq{$_});
-
+    
+    #print "Query length: $Query_Length{$_}\n";
 }
 
 
@@ -541,6 +545,8 @@ foreach(keys(%Query_Sbjct_Matches)) {
 foreach(keys(%Query_Sbjcts)) {  
 
 	$Query = $_;
+    #print "Query print 2: $Query\n";
+    
     $Query_Len = $Query_Length{$Query};
     #if nucleotide search, set max overlap to 25% of query if less than 100
     if($Protein == 0) {
