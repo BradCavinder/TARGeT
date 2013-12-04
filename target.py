@@ -24,6 +24,7 @@ from collections import defaultdict
 
 path = sys.path[0]
 path = str(path) + "/"
+#print "TARGeT path:" + path
 
 #-----------Define functions-----------------------------------------------------
 
@@ -72,7 +73,7 @@ def PHI_draw(PHI_out, Type):
     subp.call(["perl", path + "PHI_drawer2.pl", "-i", str(PHI_out) + ".list", "-o", str(PHI_out) + ".tcf_drawer", "-m", args.p_t, "-P", Type, "-n", str(600)])
 
 def MAFFT_NT(in_path, out_path):
-    subp.call(["mafft", "--ep", "0.75", "--op", "3.0", "--thread",  str(args.P), "--localpair", "--maxiterate",  "4", "--out", out_path, in_path])
+    subp.call(["mafft", "--ep", "0.5", "--op", "2.0", "--thread",  str(args.P), "--localpair", "--maxiterate",  "6", "--out", out_path, in_path])
 
 def MAFFT_P(in_path, out_path):
     subp.call(["mafft", "--thread",  str(args.P), "--maxiterate",  "100", "--out", out_path, in_path])
@@ -112,14 +113,15 @@ def runTarget(query, blast_out, blast_file_out, path):
     
     blast_in = str(blast_file_out) + ".blast"
     PHI_out = str(blast_file_out)
+    print "Blast in:", blast_in + "  PHI out:", PHI_out
     print "Running PHI"
     PHI(blast_in, PHI_out)
     print "PHI finished!\n"
     
     filter_list = str(blast_file_out) + ".list"
-    print "filter list path:", filter_list
+    #print "filter list path:", filter_list
     filter_path = os.path.join(path, "parse_target_list.py")
-    print "filter script path:", filter_path
+    #print "filter script path:", filter_path
     
     #print args.E
     if args.E == True:
@@ -151,7 +153,6 @@ def runTarget(query, blast_out, blast_file_out, path):
     index_dict = defaultdict(dict)
     dna_copies_in = open(PHI_out + ".dna", "r")
     for title, seq in fastaIO.FastaGeneralIterator(dna_copies_in):
-        copies+=1
         #print "Seq_name:", title, "\nSeq_len:", len(seq), "\n"
         index_dict[title]['left'] = seq[:25].upper()
         index_dict[title]['right'] = seq[-25:].upper()
@@ -166,6 +167,11 @@ def runTarget(query, blast_out, blast_file_out, path):
     genome_in.close()
     
     flank_file_path = standardize_flanks(flank_file_path, index_dict, args.p_f, genome_dict)
+    
+    flank_copies_in = open(flank_file_path, "r")
+    for title, seq in fastaIO.FastaGeneralIterator(flank_copies_in):
+        copies+=1
+    flank_copies_in.close()
     
     if args.S == 'PHI':
         return
@@ -373,6 +379,9 @@ def standardize_flanks(flank_file_path, index_dict, flank, genome_dict2):
     flank_in = open(flank_file_path, "r")
     adj_flank_path = flank_file_path + "_adj"
     print "In standardize_flanks, flank =", flank
+    base_path = os.path.splitext(flank_file_path)[0]
+    genomic_path = base_path + ".genomic"
+    genomic_out = open(genomic_path, "w")
     
     for title, seq in fastaIO.FastaGeneralIterator(flank_in):
         add_left = ''
@@ -383,7 +392,17 @@ def standardize_flanks(flank_file_path, index_dict, flank, genome_dict2):
         strand = title.split("Direction:")[1]
         strand = strand.strip()
         seq_len = len(seq)
+        contig = title.split("Sbjct:")[1].split(" ")[0]
+        locus_str = title.split("Location:(")[1].split(" - ")
+        start = int(locus_str[0])
+        end = int(locus_str[1].split(")")[0])
         name = title
+        #get genomic copy without flanks as PHI only report hit seq not genomic, then proceed
+        genomic_seq = fastaIO.sequence_retriever( contig, start, end, 0, genome_dict2)
+        if strand == 'minus':
+            genomic_seq = fastaIO.reverse_complement(genomic_seq)
+        print>>genomic_out, ">" + title + "\n" + genomic_seq
+        
         if args.Type == 'nucl':
             name = title.split(' ')[0]
         if not seq_len or seq_len == 0:
@@ -404,13 +423,9 @@ def standardize_flanks(flank_file_path, index_dict, flank, genome_dict2):
                     right_flank_start = retry + 25
         
         if left_flank_len == -1 or right_flank_index == -1:
-            contig = title.split("Sbjct:")[1].split(" ")[0]
-            locus_str = title.split("Location:(")[1].split(" - ")
-            start = int(locus_str[0])
-            end = int(locus_str[1].split(")")[0])
-            new_seq = sequence_retriever(genome_dict2, contig, start, end, flank)
+            new_seq = fastaIO.sequence_retriever(genome_dict2, contig, start, end, flank)
             if strand == 'minus':
-                new_seq = reverse_complement(new_seq)
+                new_seq = fastaIO.reverse_complement(new_seq)
             seq_dict[title] = new_seq
             modified += 1
             continue
@@ -426,6 +441,7 @@ def standardize_flanks(flank_file_path, index_dict, flank, genome_dict2):
             seq_dict[title] = new_seq
             modified += 1
     flank_in.close()
+    genomic_out.close()
     if modified != 0:
         flank_out = open(adj_flank_path, "w")
         for title in seq_order:
@@ -434,42 +450,6 @@ def standardize_flanks(flank_file_path, index_dict, flank, genome_dict2):
         return(adj_flank_path)
     else:
         return(flank_file_path)
-
-def sequence_retriever(genome_dict3, contig, start, end, flank):
-    needed_left = 0
-    needed_right = 0
-    wanted_seq = ''
-    add_left = ''
-    add_right = ''
-    left_coord = ''
-    right_coord = ''
-    if contig in genome_dict3:
-        seq = genome_dict3[contig]
-        contig_seq_len = len(seq)
-        if flank < start:
-            left_coord = (start-flank)-1
-        else:
-            needed_left = (flank - (int(start)-1)) + 1
-            left_coord = 0
-        if (contig_seq_len - flank) >= end:
-            right_coord = end + flank
-        else:
-            needed_right = end - ((contig_seq_len - flank)-1)
-            right_coord = contig_seq_len
-        if needed_left > 0:
-            add_left = "N" * needed_left
-        if needed_right > 0:
-            add_right = "N" * needed_right
-        wanted_seq = add_left + seq[left_coord:right_coord] + add_right
-
-    return(wanted_seq)
-
-def reverse_complement(seq):
-    import string
-    trans_table = string.maketrans("ATGCatgcNn", "TACGtacgNn")
-    rev_seq = seq[::-1]
-    rev_comp = rev_seq.translate(trans_table)
-    return(rev_comp)
 
 #-----------Make command line argument parser------------------------------------
 
@@ -612,14 +592,29 @@ if args.q and args.i == 's' or args.i == 'g':
 #for multiple individual queries-------------------------------------------------
 elif args.q and args.i == 'mi':
     print "Single input file, multiple individual inputs.\n"
-    subp.call(["python", "split_fasta.py", args.q])
+    CURRENT_DIR = os.path.dirname(__file__)
+    file_path = os.path.join(CURRENT_DIR, "split_fasta.py")
+    #subp.call(["python", file_path, args.q])
+    
+    seq_list = []
+    base_path, base_file = os.path.split(args.q)
+    base_file = os.path.splitext(base_file)[0]
+    c = 1
+    in_handle = open(args.q, "r")
+    for title, seq in fastaIO.FastaTitleStandardization(in_handle):
+        seq_path = os.path.join(base_path, base_file + "_split" + str(c) + ".fa")
+        out_handle = open(seq_path, "w")
+        print>>out_handle, ">" + title, "\n", seq
+        c += 1
+        out_handle.close()
+    in_handle.close()
     
     #count the number of new input files
     query_no_ext = os.path.splitext(args.q)[0]
     basedir, query_name = os.path.split(query_no_ext)
-    new_files = glob.glob(query_no_ext + "_*.fa")
-    print "new files:\n", new_files
-    print str(query_no_ext).strip() + "_*.fa\n"
+    new_files = glob.glob(query_no_ext + "_split*.fa")
+    #print "new files:\n", new_files
+    #print str(query_no_ext).strip() + "_split*.fa\n"
     count = len(new_files)
     print count, " files to be processed"
 
@@ -629,13 +624,14 @@ elif args.q and args.i == 'mi':
     #Run pipeline on each file with it's own output directory in the main output directory
     for fasta2 in new_files:
         query = fasta2
+        print "Query:", fasta2
         filename = os.path.splitext(fasta2)[0]
         file_name = os.path.split(filename)[1]
         #set output directory
         blast_out = os.path.normpath(os.path.join(out_dir, file_name))
         
         #set output filename
-        blast_file_out = os.path.join(blast_out, file_name + ".blast")
+        blast_file_out = os.path.join(blast_out, file_name)
         runTarget(fasta2, blast_out, blast_file_out, path)
         p += 1
         print "TARGeT has processed ", p, " of ", count, " subfiles"
@@ -673,6 +669,8 @@ elif args.d and args.i == 's' or args.i == 'g':
 #for multiple individual queries-------------------------------------------------
 elif args.d and args.i == 'mi':
     print "Directory input, each file has multiple individual queries.\n"
+    CURRENT_DIR = os.path.dirname(__file__)
+    file_path = os.path.join(CURRENT_DIR, "split_fasta.py")
     
     files = os.listdir(args.d) #get all files in the directory
 
@@ -698,10 +696,22 @@ elif args.d and args.i == 'mi':
         in_no_ext = os.path.splitext(in_full)[0]
         
         #split the fasta file
-        subp.call(["python", "split_fasta.py", in_full])
+        #subp.call(["python", file_path, in_full])
+        
+        base_path, base_file = os.path.split(args.q)
+        base_file = os.path.splitext(base_file)[0]
+        c = 1
+        in_handle = open(args.q, "r")
+        for title, seq in fastaIO.FastaTitleStandardization(in_handle):
+            seq_path = os.path.join(base_path, base_file + "_split" + str(c) + ".fa")
+            out_handle = open(seq_path, "w")
+            print>>out_handle, ">" + title, "\n", seq
+            c += 1
+            out_handle.close()
+        in_handle.close()
 
         #count the number of new input files
-        new_files = glob.glob(in_no_ext + "_*.fa")
+        new_files = glob.glob(in_no_ext + "_split*.fa")
         count2 = len(new_files)
         print count2, " subfiles to be processed"
 
