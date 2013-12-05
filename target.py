@@ -21,6 +21,7 @@ import argparse
 import re
 import fastaIO
 from collections import defaultdict
+from operator import itemgetter
 
 path = sys.path[0]
 path = str(path) + "/"
@@ -174,7 +175,7 @@ def runTarget(query, blast_out, blast_file_out, path):
     flank_copies_in.close()
     
     if args.S == 'PHI':
-        return
+        return copies
     
     if copies >= 2: 
         filter_list = []
@@ -273,7 +274,7 @@ def runTarget(query, blast_out, blast_file_out, path):
                 #print "in_count - processed = ", in_count - processed, "\n"
                 if args.S == 'MSA':
                     if (in_count - processed) == 0:
-                        return
+                        return copies
                     else:
                         continue
                 
@@ -320,8 +321,10 @@ def runTarget(query, blast_out, blast_file_out, path):
                 print "Coverting eps image to pdf\n"
                 subp.call(["convert", tree_out + ".eps", tree_out + ".pdf"])
                 c += 1
+            return copies
     else:
         print "Less than two copies found. Multiple alignment and tree building will not be performed.\n"
+        return copies
 
 #def filter_blast(blast_in):
     
@@ -599,44 +602,49 @@ elif args.q and args.i == 'mi':
     seq_list = []
     base_path, base_file = os.path.split(args.q)
     base_file = os.path.splitext(base_file)[0]
-    c = 1
+    c = 0
     in_handle = open(args.q, "r")
     for title, seq in fastaIO.FastaTitleStandardization(in_handle):
         seq_path = os.path.join(base_path, base_file + "_split" + str(c) + ".fa")
+        seq_len = len(seq)
+        seq_list.append([seq_path, seq_len])
         out_handle = open(seq_path, "w")
         print>>out_handle, ">" + title, "\n", seq
         c += 1
         out_handle.close()
     in_handle.close()
-    
-    #count the number of new input files
-    query_no_ext = os.path.splitext(args.q)[0]
-    basedir, query_name = os.path.split(query_no_ext)
-    new_files = glob.glob(query_no_ext + "_split*.fa")
-    #print "new files:\n", new_files
-    #print str(query_no_ext).strip() + "_split*.fa\n"
-    count = len(new_files)
-    print count, " files to be processed"
+    seq_list.sort(key=itemgetter(1))
+    print c, " files to be processed"
 
     #counter to keep track of the number of files that have been processed
     p = 0
+    multi = 0
+    last_good = 0
 
     #Run pipeline on each file with it's own output directory in the main output directory
-    for fasta2 in new_files:
-        query = fasta2
-        print "Query:", fasta2
-        filename = os.path.splitext(fasta2)[0]
+    for i in seq_list:
+        query = item[0]
+        print "Query:", query
+        filename = os.path.splitext(query)[0]
         file_name = os.path.split(filename)[1]
         #set output directory
         blast_out = os.path.normpath(os.path.join(out_dir, file_name))
         
         #set output filename
         blast_file_out = os.path.join(blast_out, file_name)
-        runTarget(fasta2, blast_out, blast_file_out, path)
-        os.unlink(fasta2)
+        copies = runTarget(query, blast_out, blast_file_out, path)
+        os.unlink(query)
         p += 1
-        print "TARGeT has processed ", p, " of ", count, " subfiles"
-
+        print "TARGeT has processed ", p, " of ", c, " subfiles"
+        if copies > 1:
+            multi = 1
+            last_good = 0
+        elif multi == 1:
+            last_good += 1
+        if last_good > 5:
+            print "Ending the TARGeT as it's been 6 putative queries since the last one with multiple hits"
+            break
+            
     print "TARGeT has finished!"
 
 #-----------Directory input------------------------------------------------------
