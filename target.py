@@ -633,6 +633,7 @@ elif args.q and args.i == 'mi':
         #set output filename
         blast_file_out = os.path.join(blast_out, file_name)
         runTarget(fasta2, blast_out, blast_file_out, path)
+        os.unlink(fasta2)
         p += 1
         print "TARGeT has processed ", p, " of ", count, " subfiles"
 
@@ -725,6 +726,7 @@ elif args.d and args.i == 'mi':
             blast_out = os.path.normpath(os.path.join(base_dir, os.path.split(os.path.splitext(fasta2)[0])[1]))
             blast_file_out = os.path.normpath(os.path.join(blast_out, os.path.split(fasta2)[1]))
             runTarget(fasta2, blast_out, blast_file_out, path)
+            os.unlink(fasta2)
             p2 += 1
             print "TARGeT has processed ", p2, " of ", count2, " subfiles from file ", p + 1, " of ", count, " files"
             p += 1
