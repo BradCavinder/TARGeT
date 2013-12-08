@@ -454,6 +454,29 @@ def standardize_flanks(flank_file_path, index_dict, flank, genome_dict2):
     else:
         return(flank_file_path)
 
+def best_tir_finder(check_dir):
+    length_tracker = []
+    for root, dirs, files in os.walk(item_path):
+        for filename in files:
+            fpath = os.path.join(root, filename)
+            if fnmatch.fnmatch(filename, '*.flank'):
+                print "Found flank file:", filename
+                base_dir = os.path.split(root)[1]
+                with open(fpath, "r") as f:
+                    total_seq_len = 0
+                    c = 0
+                    for title, seq in fastaIO.FastaGeneralIterator(f):
+                        seq_len = len(seq)
+                        total_seq_len += seq_len
+                        c += 1
+                        print "seq len:", str(seq_len), "C:", str(c), "total_len:", total_seq_len 
+                    average_seq_len = total_seq_len/c
+                    print "Ave len:", str(average_seq_len)
+                    length_tracker.append([base_dir, c, average_seq_len, fpath])
+    sorted_length_tracker = sorted(length_tracker, key=itemgetter(1,2), reverse=True)
+    return sorted_length_tracker[0][1], sorted_length_tracker[0][3]
+    
+
 #-----------Make command line argument parser------------------------------------
 
 parser = argparse.ArgumentParser(prog='target.py', formatter_class=argparse.ArgumentDefaultsHelpFormatter, description="This is the command line implementation of TARGeT: Tree Analysis of Related Genes and Transposons (http://target.iplantcollaborative.org/). Please read the README file for program dependencies.")
@@ -644,7 +667,61 @@ elif args.q and args.i == 'mi':
         if last_good > 5:
             print "Ending the TARGeT as it's been 6 putative queries since the last one with multiple hits"
             break
+    
+    #find best set of tirs out of those processed
+    copy_count, flank_path = best_tir_finder(out_dir)
+    bed_local = os.path.splitext(flank_path)[0] ".bed"
+    bed_temp = os.path.join(base_path, "temp.bed")
+    unclear_tirs = os.path.join(os.path.split(flank_path)[0], "unclear_tirs.txt")
+    
             
+    if copy_count >=2:
+        with open(flank_path, "r") as f, open(bed_local, "w", 1) as local_bed, open(bed_temp, "w", 1) as temp_bed:
+            pattern = re.compile(r"(supercont1\.[0-9]*).+Location:\(([0-9]*)[_|\s]*-[_|\s]*([0-9]*)\).*Direction:(.+)")
+            for title, seq in fastaIO.FastaGeneralIterator(f):
+                m = pattern.search(title)
+                contig = m.group(1)
+                start = m.group(2)
+                end = m.group(3)
+                title = title.replace(" ", "_")
+                print>>local_bed, "\t".join([contig, start, end, title])
+                print>>temp_bed, "\t".join([contig, start, end, title])
+        msa_out = flank_path + ".msa"
+        print "Running Mafft"
+        MAFFT_NT(in_path, msa_out)
+        print "Running FastTreeMP on MSA", c
+        tree_out = msa_out + ".nw"
+        print "Output tree path: ", tree_out, "\n\n"
+            
+        #Can only limit FastTree processor use through OMP_NUM_THREADS. Otherwise, it will use all processors available.
+        current_env = os.environ.copy()
+        #print "current_env before change:  ", current_env
+        current_env['OMP_NUM_THREADS'] = str(args.P)
+        #print "OMP_NUM_THREADS after change:  ", current_env['OMP_NUM_THREADS'], "\n\n"
+        
+        proc = subp.Popen(["FastTreeMP", "-nt", "-gamma", "-out", tree_out, msa_out], env = current_env)
+        proc.wait()
+        print "\nFastTreeMP finished.\n"
+        
+        print "Converting output tree file to eps image\n"
+        out = open(tree_out + ".eps", "w") #open output file for redirected stdout
+        #print "Eps image out path: ", out
+    
+        if copies > 45:
+            height = copies * 13
+            width = round(height/3)
+            print "Image height: ", height, "\twidth: ", width, "\n"
+            subp.call(["treebest",  "export", "-y", str(height), "-x", str(width), "-b", "4.5", "-f", "13", "-m", "40", tree_out], stdout=out)
+        else:
+            subp.call(["treebest",  "export", tree_out], stdout=out)
+        out.close() #close output file
+
+        print "Coverting eps image to pdf\n"
+        subp.call(["convert", tree_out + ".eps", tree_out + ".pdf"])
+    else:
+        open(unclear_tirs, "w")
+        close(unclear_tirs)
+         
     print "TARGeT has finished!"
 
 #-----------Directory input------------------------------------------------------
