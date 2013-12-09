@@ -625,6 +625,7 @@ elif args.q and args.i == 'mi':
     seq_list = []
     base_path, base_file = os.path.split(args.q)
     base_file = os.path.splitext(base_file)[0]
+    finished = os.path.join(base_path, "finished")
     c = 0
     in_handle = open(args.q, "r")
     for title, seq in fastaIO.FastaTitleStandardization(in_handle):
@@ -636,6 +637,7 @@ elif args.q and args.i == 'mi':
         c += 1
         out_handle.close()
     in_handle.close()
+    subp.call(["mv", "-t", finished, args.q])
     seq_list.sort(key=itemgetter(1))
     print c, " files to be processed"
 
