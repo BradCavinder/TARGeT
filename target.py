@@ -702,7 +702,7 @@ elif args.q and args.i == 'mi':
             
     if copy_count >=2:
         with open(flank_path, "r") as f, open(bed_local, "w", 1) as local_bed, open(bed_temp, "w", 1) as temp_bed:
-            pattern = re.compile(r"(supercont1\.[0-9]*).+Location:\(([0-9]*)[_|\s]*-[_|\s]*([0-9]*)\).*Direction:(.+)")
+            pattern = re.compile(r"Sbjct:(supercont1\.[0-9]*).+Location:\(([0-9]*)[_|\s]*-[_|\s]*([0-9]*)\).*Direction:(.+)")
             for title, seq in fastaIO.FastaGeneralIterator(f):
                 m = pattern.search(title)
                 if me:
