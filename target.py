@@ -335,10 +335,7 @@ def runTarget(query, blast_out, blast_file_out, path):
             return copies
     else:
         print "Less than two copies found. Multiple alignment and tree building will not be performed.\n"
-        return copies
-
-#def filter_blast(blast_in):
-    
+        return copies    
 
 def shuffle_split(fpath):
     """Shuffle and split a fasta file into groups of ~350""" 
