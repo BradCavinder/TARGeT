@@ -289,7 +289,7 @@ foreach(keys(%Query_Name_Seq)) {
 
 	$Query_Length{$_} = length($Query_Name_Seq{$_});
     
-    #print "Query length: $Query_Length{$_}\n";
+    print "Query length: $Query_Length{$_}\nQuery_Name_Seq: $Query_Name_Seq{$_}\n";
 }
 
 
