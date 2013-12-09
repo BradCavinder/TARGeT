@@ -113,7 +113,7 @@ def runTarget(query, blast_out, blast_file_out, path):
         
     if args.S == 'Blast':
         return
-    
+    time.sleep(3)
     blast_in = str(blast_file_out) + ".blast"
     PHI_out = str(blast_file_out)
     #print "Blast in:", blast_in + "  PHI out:", PHI_out
