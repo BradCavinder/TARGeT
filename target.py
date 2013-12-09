@@ -682,7 +682,7 @@ elif args.q and args.i == 'mi':
             skip = 1
             continue
         if multi == 0:
-            if (p > 4  and length > 10000) or length > 11000:
+            if (p > 4  and length > 10000) or length > 12000:
                 print "Ending TARGeT runs. Either 5 queries failed to find multiple hits and query length is over 10kb or query length is over 12kb"
                 skip = 1
                 end = 1
