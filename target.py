@@ -688,12 +688,12 @@ elif args.q and args.i == 'mi':
             last_good += 1
         if last_good >= 5:
             print "Ending TARGeT runs as it's been 5 putative queries since the last one with multiple hits"
-            skip = 1
+            skip_rest = 1
             continue
         if multi == 0:
             if (p > 4  and length > 10000) or length > 12000:
                 print "Ending TARGeT runs. Either 5 queries failed to find multiple hits and query length is over 10kb or query length is over 12kb without any queries findng multiple hits"
-                skip = 1
+                skip_rest = 1
                 continue
     
     
