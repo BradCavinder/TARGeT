@@ -653,7 +653,7 @@ elif args.q and args.i == 'mi':
     for i in seq_list:
         query = i[0]
         length = i[1]
-        if ship_rest == 1:
+        if skip_rest == 1:
             os.unlink(query)
             continue
         
