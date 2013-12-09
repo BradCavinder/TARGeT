@@ -121,7 +121,8 @@ def runTarget(query, blast_out, blast_file_out, path):
     print>>log_out,
     PHI(blast_in, PHI_out)
     print "PHI finished!\n"
-    print>>log_out,
+    print>>log_out, "PHI finished!\n"
+    time.wait(3)
     
     filter_list = str(blast_file_out) + ".list"
     if not os.path.exists(filter_list):
