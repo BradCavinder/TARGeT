@@ -692,7 +692,7 @@ elif args.q and args.i == 'mi':
                 title = title.replace(" ", "_")
                 print>>local_bed, "\t".join([contig, start, end, title])
                 while os.path.exists(temp_bed):
-                    time.wait(60)
+                    time.wait(20)
                 print>>temp_bed, "\t".join([contig, start, end, title])
         msa_out = flank_path + ".msa"
         print "Running Mafft"
