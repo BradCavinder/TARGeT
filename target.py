@@ -670,8 +670,8 @@ elif args.q and args.i == 'mi':
         if last_good > 5:
             print "Ending TARGeT runs as it's been 6 putative queries since the last one with multiple hits"
             break
-        if p > 7 or length > 10000:
-            print "Ending TARGeT runs as 8 queries failed to find multiple hits or query length is over 10kb"
+        if (p > 4  and length > 10000) or length > 11000:
+            print "Ending TARGeT runs. Either 5 queries failed to find multiple hits and query length is over 10kb or query length is over 12kb"
             break
     
     #find best set of tirs out of those processed
@@ -691,6 +691,8 @@ elif args.q and args.i == 'mi':
                 end = m.group(3)
                 title = title.replace(" ", "_")
                 print>>local_bed, "\t".join([contig, start, end, title])
+                while os.path.exists(temp_bed):
+                    time.wait(60)
                 print>>temp_bed, "\t".join([contig, start, end, title])
         msa_out = flank_path + ".msa"
         print "Running Mafft"
