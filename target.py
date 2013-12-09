@@ -670,9 +670,10 @@ elif args.q and args.i == 'mi':
         if last_good > 5:
             print "Ending TARGeT runs as it's been 6 putative queries since the last one with multiple hits"
             break
-        if (p > 4  and length > 10000) or length > 11000:
-            print "Ending TARGeT runs. Either 5 queries failed to find multiple hits and query length is over 10kb or query length is over 12kb"
-            break
+        if multi == 0:
+            if (p > 4  and length > 10000) or length > 11000:
+                print "Ending TARGeT runs. Either 5 queries failed to find multiple hits and query length is over 10kb or query length is over 12kb"
+                break
     
     #find best set of tirs out of those processed
     copy_count, flank_path = best_tir_finder(out_dir)
