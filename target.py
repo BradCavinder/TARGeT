@@ -670,7 +670,7 @@ elif args.q and args.i == 'mi':
     
     #find best set of tirs out of those processed
     copy_count, flank_path = best_tir_finder(out_dir)
-    bed_local = os.path.splitext(flank_path)[0] ".bed"
+    bed_local = os.path.splitext(flank_path)[0] + ".bed"
     bed_temp = os.path.join(base_path, "temp.bed")
     unclear_tirs = os.path.join(os.path.split(flank_path)[0], "unclear_tirs.txt")
     
