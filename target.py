@@ -20,6 +20,7 @@ import subprocess as subp
 import argparse
 import re
 import fastaIO
+import fnmatch
 from collections import defaultdict
 from operator import itemgetter
 
@@ -85,12 +86,12 @@ def runTarget(query, blast_out, blast_file_out, path):
     
     #make command log file
     log_out = open(os.path.join(blast_out, "log.txt"), "w")
-    print>>log_out, " ".join(sys.argv)
-    log_out.close()
+    print>>log_out, " ".join(sys.argv). "\n"
     
     #use blastn if DNA
     if args.Type == 'nucl':
         print "Using BLASTN\n"
+        print>>log_out, "Using BLASTN\n"
         BLASTN(query, blast_file_out)
         
     #use tblastn if protein
@@ -100,6 +101,7 @@ def runTarget(query, blast_out, blast_file_out, path):
         
     #make svg drawing(s)
     print "Making svg image of blast results\n"
+    print>>log_out, "Making svg image of blast results\n"
     Blast_draw(blast_file_out)
 
     #convert svg image to jpg
@@ -116,15 +118,19 @@ def runTarget(query, blast_out, blast_file_out, path):
     PHI_out = str(blast_file_out)
     #print "Blast in:", blast_in + "  PHI out:", PHI_out
     print "Running PHI"
+    print>>log_out,
     PHI(blast_in, PHI_out)
     print "PHI finished!\n"
+    print>>log_out,
     
     filter_list = str(blast_file_out) + ".list"
+    if not os.path.exists(filter_list):
+        print>>log_out, "PHI failed to create list file, aborting\n"
+        return
     #print "filter list path:", filter_list
     filter_path = os.path.join(path, "parse_target_list.py")
     #print "filter script path:", filter_path
-    if not os.path.exists(filter_list):
-        return
+    
         
     #print args.E
     if args.E == True:
@@ -137,10 +143,12 @@ def runTarget(query, blast_out, blast_file_out, path):
     
     #make svg image of PHI homologs
     print "Making svg image of homologs\n"
+    print>>log_out, "Making svg image of homologs\n"
     PHI_draw(PHI_out, Type)
 
     #convert svg to pdf
     print "Coverting svg image to pdf\n"
+    print>>log_out, "Coverting svg image to pdf\n"
     img_convert(str(PHI_out) + ".tcf_drawer.svg", str(PHI_out) + ".tcf_drawer.pdf")
 
     #get query length
@@ -151,7 +159,8 @@ def runTarget(query, blast_out, blast_file_out, path):
     query_in.close()
     
     #check that two or more copies were found and setup index checker to check for correct length flanks and for the correct locus sequence
-    print "Building index dict"
+    print "Building index dict\n"
+    print>>log_out, "Building index dict\n"
     copies = 0
     index_dict = defaultdict(dict)
     dna_copies_in = open(PHI_out + ".dna", "r")
@@ -648,7 +657,6 @@ elif args.q and args.i == 'mi':
     multi = 0
     last_good = 0
     skip_rest = 0
-    end = 0
     
     #Run pipeline on each file with it's own output directory in the main output directory
     for i in seq_list:
@@ -685,31 +693,31 @@ elif args.q and args.i == 'mi':
             if (p > 4  and length > 10000) or length > 12000:
                 print "Ending TARGeT runs. Either 5 queries failed to find multiple hits and query length is over 10kb or query length is over 12kb"
                 skip = 1
-                end = 1
                 continue
     
-    if end == 1:
-        print "TARGeT has finished!"
-        exit(0)
+    
     #find best set of tirs out of those processed
     copy_count, flank_path = best_tir_finder(out_dir)
     bed_local = os.path.splitext(flank_path)[0] + ".bed"
     bed_temp = os.path.join(base_path, "temp.bed")
     unclear_tirs = os.path.join(os.path.split(flank_path)[0], "unclear_tirs.txt")
-    
+    print "Copy count:", copy_count
             
     if copy_count >=2:
         with open(flank_path, "r") as f, open(bed_local, "w", 1) as local_bed, open(bed_temp, "w", 1) as temp_bed:
             pattern = re.compile(r"(supercont1\.[0-9]*).+Location:\(([0-9]*)[_|\s]*-[_|\s]*([0-9]*)\).*Direction:(.+)")
             for title, seq in fastaIO.FastaGeneralIterator(f):
                 m = pattern.search(title)
-                contig = m.group(1)
-                start = m.group(2)
-                end = m.group(3)
+                if me:
+                    contig = m.group(1)
+                    start = m.group(2)
+                    end = m.group(3)
+                else:
+                    print "Couldn't match contig and locus info in copy header\n"
                 title = title.replace(" ", "_")
                 print>>local_bed, "\t".join([contig, start, end, title])
                 while os.path.exists(temp_bed):
-                    time.wait(20)
+                    time.wait(10)
                 print>>temp_bed, "\t".join([contig, start, end, title])
         msa_out = flank_path + ".msa"
         print "Running Mafft"
