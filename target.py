@@ -86,7 +86,7 @@ def runTarget(query, blast_out, blast_file_out, path):
     
     #make command log file
     log_out = open(os.path.join(blast_out, "log.txt"), "w")
-    print>>log_out, " ".join(sys.argv). "\n"
+    print>>log_out, " ".join(sys.argv), "\n"
     
     #use blastn if DNA
     if args.Type == 'nucl':
