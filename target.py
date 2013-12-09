@@ -699,7 +699,7 @@ elif args.q and args.i == 'mi':
     bed_local = os.path.splitext(flank_path)[0] + ".bed"
     bed_temp = os.path.join(base_path, "temp.bed")
     unclear_tirs = os.path.join(os.path.split(flank_path)[0], "unclear_tirs.txt")
-    print "Copy count:", copy_count
+    print "Copy count:", copy_count, "Bed temp:", bed_temp
             
     if copy_count >=2:
         with open(flank_path, "r") as f, open(bed_local, "w", 1) as local_bed, open(bed_temp, "w", 1) as temp_bed:
