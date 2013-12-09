@@ -646,7 +646,7 @@ elif args.q and args.i == 'mi':
 
     #Run pipeline on each file with it's own output directory in the main output directory
     for i in seq_list:
-        query = item[0]
+        query = i[0]
         print "Query:", query
         filename = os.path.splitext(query)[0]
         file_name = os.path.split(filename)[1]
