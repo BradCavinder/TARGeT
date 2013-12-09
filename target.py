@@ -122,7 +122,7 @@ def runTarget(query, blast_out, blast_file_out, path):
     PHI(blast_in, PHI_out)
     print "PHI finished!\n"
     print>>log_out, "PHI finished!\n"
-    time.wait(3)
+    time.sleep(3)
     
     filter_list = str(blast_file_out) + ".list"
     if not os.path.exists(filter_list):
@@ -689,7 +689,7 @@ elif args.q and args.i == 'mi':
             continue
         if multi == 0:
             if (p > 4  and length > 10000) or length > 12000:
-                print "Ending TARGeT runs. Either 5 queries failed to find multiple hits and query length is over 10kb or query length is over 12kb"
+                print "Ending TARGeT runs. Either 5 queries failed to find multiple hits and query length is over 10kb or query length is over 12kb without any queries findng multiple hits"
                 skip = 1
                 continue
     
@@ -715,7 +715,7 @@ elif args.q and args.i == 'mi':
                 title = title.replace(" ", "_")
                 print>>local_bed, "\t".join([contig, start, end, title])
                 while os.path.exists(temp_bed):
-                    time.wait(10)
+                    time.sleep(10)
                 print>>temp_bed, "\t".join([contig, start, end, title])
         msa_out = flank_path + ".msa"
         print "Running Mafft"
