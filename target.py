@@ -114,7 +114,7 @@ def runTarget(query, blast_out, blast_file_out, path):
     
     blast_in = str(blast_file_out) + ".blast"
     PHI_out = str(blast_file_out)
-    print "Blast in:", blast_in + "  PHI out:", PHI_out
+    #print "Blast in:", blast_in + "  PHI out:", PHI_out
     print "Running PHI"
     PHI(blast_in, PHI_out)
     print "PHI finished!\n"
@@ -123,7 +123,9 @@ def runTarget(query, blast_out, blast_file_out, path):
     #print "filter list path:", filter_list
     filter_path = os.path.join(path, "parse_target_list.py")
     #print "filter script path:", filter_path
-    
+    if not os.path.exists(filter_list):
+        return
+        
     #print args.E
     if args.E == True:
         #print "E is true!"
@@ -456,7 +458,7 @@ def standardize_flanks(flank_file_path, index_dict, flank, genome_dict2):
 
 def best_tir_finder(check_dir):
     length_tracker = []
-    for root, dirs, files in os.walk(item_path):
+    for root, dirs, files in os.walk(check_dir):
         for filename in files:
             fpath = os.path.join(root, filename)
             if fnmatch.fnmatch(filename, '*.flank'):
@@ -645,11 +647,16 @@ elif args.q and args.i == 'mi':
     p = 0
     multi = 0
     last_good = 0
-
+    skip_rest = 0
+    
     #Run pipeline on each file with it's own output directory in the main output directory
     for i in seq_list:
         query = i[0]
         length = i[1]
+        if ship_rest == 1:
+            os.unlink(query)
+            continue
+        
         print "Query:", query
         filename = os.path.splitext(query)[0]
         file_name = os.path.split(filename)[1]
@@ -662,18 +669,22 @@ elif args.q and args.i == 'mi':
         os.unlink(query)
         p += 1
         print "TARGeT has processed ", p, " of ", c, " subfiles"
+        if not copies:
+            continue
         if copies > 1:
             multi = 1
             last_good = 0
         elif multi == 1:
             last_good += 1
-        if last_good > 5:
-            print "Ending TARGeT runs as it's been 6 putative queries since the last one with multiple hits"
-            break
+        if last_good >= 5:
+            print "Ending TARGeT runs as it's been 5 putative queries since the last one with multiple hits"
+            skip = 1
+            continue
         if multi == 0:
             if (p > 4  and length > 10000) or length > 11000:
                 print "Ending TARGeT runs. Either 5 queries failed to find multiple hits and query length is over 10kb or query length is over 12kb"
-                break
+                skip = 1
+                continue
     
     #find best set of tirs out of those processed
     copy_count, flank_path = best_tir_finder(out_dir)
