@@ -117,8 +117,8 @@ def runTarget(query, blast_out, blast_file_out, path):
     blast_in = str(blast_file_out) + ".blast"
     PHI_out = str(blast_file_out)
     #print "Blast in:", blast_in + "  PHI out:", PHI_out
-    print "Running PHI"
-    print>>log_out,
+    print "Running PHI\n"
+    print>>log_out, "Running PHI\n"
     PHI(blast_in, PHI_out)
     print "PHI finished!\n"
     print>>log_out, "PHI finished!\n"
