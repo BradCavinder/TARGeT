@@ -187,6 +187,7 @@ def runTarget(query, blast_out, blast_file_out, path):
     flank_copies_in.close()
     
     if args.S == 'PHI':
+        log_out.close()
         return copies
     
     if copies >= 2: 
