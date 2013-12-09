@@ -648,6 +648,7 @@ elif args.q and args.i == 'mi':
     multi = 0
     last_good = 0
     skip_rest = 0
+    end = 0
     
     #Run pipeline on each file with it's own output directory in the main output directory
     for i in seq_list:
@@ -684,8 +685,12 @@ elif args.q and args.i == 'mi':
             if (p > 4  and length > 10000) or length > 11000:
                 print "Ending TARGeT runs. Either 5 queries failed to find multiple hits and query length is over 10kb or query length is over 12kb"
                 skip = 1
+                end = 1
                 continue
     
+    if end == 1:
+        print "TARGeT has finished!"
+        exit(0)
     #find best set of tirs out of those processed
     copy_count, flank_path = best_tir_finder(out_dir)
     bed_local = os.path.splitext(flank_path)[0] + ".bed"
