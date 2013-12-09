@@ -647,6 +647,7 @@ elif args.q and args.i == 'mi':
     #Run pipeline on each file with it's own output directory in the main output directory
     for i in seq_list:
         query = i[0]
+        length = i[1]
         print "Query:", query
         filename = os.path.splitext(query)[0]
         file_name = os.path.split(filename)[1]
@@ -665,7 +666,10 @@ elif args.q and args.i == 'mi':
         elif multi == 1:
             last_good += 1
         if last_good > 5:
-            print "Ending the TARGeT as it's been 6 putative queries since the last one with multiple hits"
+            print "Ending TARGeT runs as it's been 6 putative queries since the last one with multiple hits"
+            break
+        if p > 7 or length > 10000:
+            print "Ending TARGeT runs as 8 queries failed to find multiple hits or query length is over 10kb"
             break
     
     #find best set of tirs out of those processed
