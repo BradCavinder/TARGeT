@@ -666,7 +666,7 @@ elif args.q and args.i == 'mi':
             os.unlink(query)
             continue
         
-        print "Query:", query
+        #print "Query:", query
         filename = os.path.splitext(query)[0]
         file_name = os.path.split(filename)[1]
         #set output directory
@@ -678,6 +678,7 @@ elif args.q and args.i == 'mi':
         os.unlink(query)
         p += 1
         print "TARGeT has processed ", p, " of ", c, " subfiles"
+        print "copies:", copies
         if not copies:
             continue
         if copies > 1:
