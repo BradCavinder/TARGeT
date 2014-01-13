@@ -252,7 +252,7 @@ def runTarget(query, blast_out, blast_file_out, path):
             print str(copies) + " copies in " + in_path, "\n"
             if copies >= 601:
                 print "Shuffling and splitting file for seperate alignments\n"
-                split_list, copies = shuffle_split(in_path)
+                split_list, copies = fastaIO.shuffle_split(in_path, 350)
                 print "Length of split list in:", len(split_list)
             print "Length of split list out:", len(split_list)
             if len(split_list) > 0:
@@ -339,50 +339,6 @@ def runTarget(query, blast_out, blast_file_out, path):
     else:
         print "Less than two copies found. Multiple alignment and tree building will not be performed.\n"
         return copies    
-
-def shuffle_split(fpath):
-    """Shuffle and split a fasta file into groups of ~350""" 
-    
-    import math
-    import random
-    
-    copy_list = []
-    copy_dict = {}
-    group_list = []
-    path_list = []
-    
-    in_handle = open(fpath, "r")
-    for title, seq in fastaIO.FastaGeneralIterator(in_handle):
-        title = title.strip("\n").strip()
-        copy_list.append(title)
-        copy_dict[title] = seq
-    in_handle.close()
-
-    copy_num = len(copy_list)
-    groups = int(round(copy_num/350.0))
-    copies_to_group = int(math.ceil(float(copy_num)/groups))
-    random.shuffle(copy_list)
-    
-    i = 0
-    while i < groups:
-        start = copies_to_group * i
-        end = (start + copies_to_group)-1
-        if start < copy_num:
-            if end < copy_num:
-                group_list.append(copy_list[start:end])
-            else:
-                group_list.append(copy_list[start:])
-        i += 1
-    c = 1
-    for group in group_list:
-        out_path = fpath + ".group" + str(c) + "_split"
-        path_list.append(out_path)
-        out_handle = open(out_path, "w")
-        for title in group:
-            print>>out_handle, ">" + title + "\n" + copy_dict[title]
-        out_handle.close()
-        c += 1
-    return(path_list, copies_to_group)
     
 def standardize_flanks(flank_file_path, index_dict, flank, genome_dict2):
     """Find the index position of the start and end of the DNA match in the sequences with flanks. If either flank is not as long as the flank setting, add N's to reach that number. If the index is -1 (not found), go back into the genome sequence to get the correct locus"""
@@ -437,7 +393,7 @@ def standardize_flanks(flank_file_path, index_dict, flank, genome_dict2):
                     right_flank_start = retry + 25
         
         if left_flank_len == -1 or right_flank_index == -1:
-            new_seq = fastaIO.sequence_retriever(genome_dict2, contig, start, end, flank)
+            new_seq = fastaIO.sequence_retriever(contig, start, end, flank, genome_dict2)
             if strand == 'minus':
                 new_seq = fastaIO.reverse_complement(new_seq)
             seq_dict[title] = new_seq
@@ -709,7 +665,7 @@ elif args.q and args.i == 'mi':
             pattern = re.compile(r"Sbjct:(supercont1\.[0-9]*).+Location:\(([0-9]*)[_|\s]*-[_|\s]*([0-9]*)\).*Direction:(.+)")
             for title, seq in fastaIO.FastaGeneralIterator(f):
                 m = pattern.search(title)
-                if me:
+                if m:
                     contig = m.group(1)
                     start = m.group(2)
                     end = m.group(3)

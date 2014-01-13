@@ -137,14 +137,101 @@ def sequence_retriever(contig, start, end, flank, genome_dict3):
         wanted_seq = add_left + seq[left_coord:right_coord] + add_right
     else:
         print "Didn't find " + contig + " in sequence dictionary."
-    return(wanted_seq)
+    return wanted_seq
+    
+def sequence_retriever2(contig, start, end, flank, genome_dict3):
+    needed_left = 0
+    needed_right = 0
+    wanted_seq = ''
+    add_left = ''
+    add_right = ''
+    left_coord = ''
+    right_coord = ''
+    if contig in genome_dict3:
+        seq = genome_dict3[contig]
+        contig_seq_len = len(seq)
+        if int(flank) < int(start):
+            left_coord = (int(start)-int(flank))
+        else:
+            needed_left = (int(flank) - int(start))
+            left_coord = 0
+        if (contig_seq_len - int(flank)) >= int(end):
+            right_coord = (int(end+1) + int(flank))
+        else:
+            needed_right = int(end) - ((contig_seq_len - int(flank)))
+            right_coord = contig_seq_len
+        if needed_left > 0:
+            add_left = "N" * needed_left
+        if needed_right > 0:
+            add_right = "N" * needed_right
+        wanted_seq = add_left + seq[left_coord:right_coord] + add_right
+    else:
+        print "Didn't find " + contig + " in sequence dictionary."
+    right_coord = right_coord - 1
+    return wanted_seq, left_coord, right_coord
 
 def SplitLongString(s, w):
     temp = ''.join(s[x:x+w] + '\n' for x in xrange(0, len(s), w))
     temp = temp.rstrip("\n")
     return temp
+    
+def shuffle_split(fpath, split_number):
+    """Shuffle and split a fasta file into groups of ~350""" 
+    
+    import math
+    import random
+    
+    copy_list = []
+    copy_dict = {}
+    group_list = []
+    path_list = []
+    
+    in_handle = open(fpath, "r")
+    for title, seq in FastaGeneralIterator(in_handle):
+        title = title.strip("\n").strip()
+        copy_list.append(title)
+        copy_dict[title] = seq
+    in_handle.close()
+
+    copy_num = len(copy_list)
+    groups = int(round(copy_num/float(split_number)))
+    copies_to_group = int(math.ceil(float(copy_num)/groups))
+    random.shuffle(copy_list)
+    
+    i = 0
+    while i < groups:
+        start = copies_to_group * i
+        end = (start + copies_to_group)-1
+        if start < copy_num:
+            if end < copy_num:
+                group_list.append(copy_list[start:end])
+            else:
+                group_list.append(copy_list[start:])
+        i += 1
+    c = 1
+    for group in group_list:
+        out_path = fpath + ".group" + str(c) + "_split"
+        path_list.append(out_path)
+        out_handle = open(out_path, "w")
+        for title in group:
+            print>>out_handle, ">" + title + "\n" + copy_dict[title]
+        out_handle.close()
+        c += 1
+    return(path_list, copies_to_group)
 
 class Vividict(dict):
     def __missing__(self, key):
         value = self[key] = type(self)()
         return value
+
+class cd:
+    """Context manager for changing the current working directory"""
+    def __init__(self, newPath):
+        self.newPath = newPath
+
+    def __enter__(self):
+        self.savedPath = os.getcwd()
+        os.chdir(self.newPath)
+
+    def __exit__(self, etype, value, traceback):
+        os.chdir(self.savedPath)
