@@ -73,7 +73,7 @@ def PHI_draw(PHI_out, Type):
     subp.call(["perl", path + "PHI_drawer2.pl", "-i", str(PHI_out) + ".list", "-o", str(PHI_out) + ".tcf_drawer", "-m", args.p_t, "-P", Type, "-n", str(600)])
 
 def MAFFT_NT(in_path, out_path):
-    subp.call(["mafft", "--ep", "0.15", "--op", "1", "--thread",  str(args.P), "--localpair", "--maxiterate",  "8", "--out", out_path, in_path])
+    subp.call(["mafft", "--ep", "0.15", "--op", "1.2", "--thread",  str(args.P), "--localpair", "--maxiterate",  "16", "--out", out_path, in_path])
 
 def MAFFT_P(in_path, out_path):
     subp.call(["mafft", "--thread",  str(args.P), "--maxiterate",  "100", "--out", out_path, in_path])
