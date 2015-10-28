@@ -21,6 +21,7 @@ import argparse
 import re
 import fastaIO
 from collections import defaultdict
+from distutils.spawn import find_executable
 
 path = sys.path[0]
 path = str(path) + "/"
@@ -497,7 +498,60 @@ if args.p_p == 'True':
 else:
     args.p_p = '0'
 
+#-----------Check for executables & genome file----------------------------------
 
+error_message = ''
+error_start = "The following programs were not found in your $PATH:"
+error_end = "Please install any missing programs and rerun TARGeT."
+
+blastall_exe = find_executable("blastall")
+perl_exe = find_executable("perl")
+convert_exe = find_executable("convert")
+mafft_exe = find_executable("mafft")
+FastTreeMP_exe = find_executable("FastTreeMP")
+treebest_exe = find_executable("treebest")
+
+if blastall_exe is None:
+    error_message = error_start + "\n\tblastall (NCBI BLAST2  v2.2.26)"
+if perl_exe is None:
+    if error_message == '':
+        error_message = error_start + "\n\tPerl"
+    else:
+        error_message += "\n\tPerl"
+if convert_exe is None:
+    if error_message == '':
+        error_message = error_start + "\n\tImageMagick"
+    else:
+        error_message += "\n\tImageMagick"
+if mafft_exe is None:
+    if error_message == '':
+        error_message = error_start + "\n\tMAFFT"
+    else:
+        error_message += "\n\tMAFFT"
+if FastTreeMP_exe is None:
+    if error_message == '':
+        error_message = error_start + "\n\tFastTreeMP"
+    else:
+        error_message += "\n\tFastTreeMP"
+if treebest_exe is None:
+    if error_message == '':
+        error_message = error_start + "\n\tTreeBest"
+    else:
+        error_message += "\n\tTreeBest"
+
+if error_message == '':
+    print "\nAll required programs located."
+else:
+    error_message += error_end
+    print error_message
+    sys.exit(-1)
+
+try:
+    with open(args.genome, "r") as test:
+        pass
+except:
+    print "\nGenome file could not be located at", args.genome, "\n"
+    raise
 
 #-----------Create main output directory-----------------------------------------
 
@@ -536,7 +590,14 @@ else:
 #for single indiviual query or grouped query
 if args.q and args.i == 's' or args.i == 'g':
     print "Single input file, single input\n"
-    query = args.q    
+    query = args.q
+    try:
+        with open(query, "r") as test:
+            pass
+    except:
+        print "Query file could not be located at", query
+        raise
+    
     #set output filename
     blast_file_out = os.path.join(out_dir, query_name)
     runTarget(args.q, out_dir, blast_file_out, path)
@@ -554,9 +615,13 @@ elif args.q and args.i == 'mi':
     base_path, base_file = os.path.split(args.q)
     base_file = os.path.splitext(base_file)[0]
     c = 1
-    in_handle = open(args.q, "r")
+    try:
+        in_handle = open(args.q, "r")
+    except:
+        print "Query file could not be located at", args.q, "\n"
+        raise
     for title, seq in fastaIO.FastaTitleStandardization(in_handle):
-        seq_path = os.path.join(base_path, base_file + "_split" + str(c) + ".fa")
+        seq_path = os.path.join(base_path, title + "_split" + str(c) + ".fa")
         out_handle = open(seq_path, "w")
         print>>out_handle, ">" + title, "\n", seq
         c += 1
@@ -658,7 +723,7 @@ elif args.d and args.i == 'mi':
         c = 1
         in_handle = open(args.q, "r")
         for title, seq in fastaIO.FastaTitleStandardization(in_handle):
-            seq_path = os.path.join(base_path, base_file + "_split" + str(c) + ".fa")
+            seq_path = os.path.join(base_path, title + "_split" + str(c) + ".fa")
             out_handle = open(seq_path, "w")
             print>>out_handle, ">" + title, "\n", seq
             c += 1

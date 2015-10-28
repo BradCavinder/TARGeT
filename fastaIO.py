@@ -139,7 +139,7 @@ def sequence_retriever(contig, start, end, flank, genome_dict3):
         print "Didn't find " + contig + " in sequence dictionary."
     return wanted_seq
     
-def sequence_retriever2(contig, start, end, flank, genome_dict3):
+def sequence_retriever2(contig, start, end, left_flank, right_flank, genome_dict3):
     needed_left = 0
     needed_right = 0
     wanted_seq = ''
@@ -150,15 +150,15 @@ def sequence_retriever2(contig, start, end, flank, genome_dict3):
     if contig in genome_dict3:
         seq = genome_dict3[contig]
         contig_seq_len = len(seq)
-        if int(flank) < int(start):
-            left_coord = (int(start)-int(flank))
+        if int(left_flank) < int(start):
+            left_coord = (int(start)-int(left_flank))
         else:
-            needed_left = (int(flank) - int(start))
+            needed_left = (int(left_flank) - int(start))
             left_coord = 0
-        if (contig_seq_len - int(flank)) >= int(end):
-            right_coord = (int(end+1) + int(flank))
+        if (contig_seq_len - int(right_flank)) >= int(end):
+            right_coord = (int(end+1) + int(right_flank))
         else:
-            needed_right = int(end) - ((contig_seq_len - int(flank)))
+            needed_right = int(end) - ((contig_seq_len - int(right_flank)))
             right_coord = contig_seq_len
         if needed_left > 0:
             add_left = "N" * needed_left
