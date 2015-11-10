@@ -3706,7 +3706,7 @@ sub E_value_comparison {
 
 	}else{
 
-		if($E2 =~ /e-/) {
+		if(defined $E2 and $E2 =~ /e-/) {
 
 			$Compare_Result = ">";
 
