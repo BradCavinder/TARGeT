@@ -38,6 +38,11 @@ The following command (without the single quotation marks) will return a long he
 Change Log
 ==========
 
+2.10 - 10NOV2015
+   Added parallel processing of multiple queries. Added back option to process multiple queries as a group. Several bugfixes.
+
+2.01 - 28OCT2015 -  Added checks for required prerequisites and existence of input paths.
+
 2.00 - 10JUN2013 - Major update
 
    MAFFT has replaced MUSCLE for multiple sequence alignments, and FastTreeMP is now used for tree building with TreeBest still being used to convert the tree file to an EPS image.
