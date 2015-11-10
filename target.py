@@ -472,7 +472,7 @@ parser.add_argument("-S", metavar="Stopping point", type=str, choices=("Blast", 
 
 parser.add_argument("-DB", action='store_false', default="True", help="Skip formatDB and custom indexing. These steps are required for the first search against a genome. If the genome sequence file is changed in any way, these steps will need to be performed again. Otherwise, you may use this flag to skip these steps. By default, the steps are always performed")
 
-parser.add_argument("-v", action='version', version='TARGeT-2.01', help="Version information")
+parser.add_argument("-v", action='version', version='TARGeT-2.10', help="Version information")
 
 #BLAST arguments
 parser_blast = parser.add_argument_group("BLAST")
