@@ -17,6 +17,7 @@ import datetime
 import time
 import glob
 import subprocess as subp
+import multiprocessing as mp
 import argparse
 import re
 import fastaIO
@@ -67,7 +68,7 @@ def Blast_draw(blast_file_out):
 def img_convert(in_file, out_file):
     subp.call(["convert", in_file, out_file])
 
-def PHI(blast_in, PHI_out):
+def PHI(blast_in, PHI_out, query):
     subp.call(["perl", path + "PHI_2.4.pl", "-i", blast_in, "-q", query, "-D", args.genome, "-o", PHI_out, "-e", str(args.p_e), "-M", str(args.p_M), "-P", Type, "-d", str(args.p_d), "-g", str(args.p_g), "-n", str(args.p_n), "-c", str(args.p_c), "-G", str(args.p_G), "-t", str(args.p_t), "-f", str(args.p_f), "-p", args.p_p, "-R", realign])
 
 def PHI_draw(PHI_out, Type):
@@ -81,7 +82,7 @@ def MAFFT_P(in_path, out_path):
 
 def runTarget(query, blast_out, blast_file_out, path):
     #make output directory
-    subp.call(["mkdir", blast_out])
+    os.mkdir(blast_out)
     
     #make command log file
     log_out = open(os.path.join(blast_out, "log.txt"), "w")
@@ -116,7 +117,7 @@ def runTarget(query, blast_out, blast_file_out, path):
     PHI_out = str(blast_file_out)
     print "Blast in:", blast_in + "  PHI out:", PHI_out
     print "Running PHI"
-    PHI(blast_in, PHI_out)
+    PHI(blast_in, PHI_out, query)
     print "PHI finished!\n"
     
     filter_list = str(blast_file_out) + ".list"
@@ -323,6 +324,35 @@ def runTarget(query, blast_out, blast_file_out, path):
                 c += 1
     else:
         print "Less than two copies found. Multiple alignment and tree building will not be performed.\n"
+        
+def runTarget_helper(args):
+    return runTarget(*args)
+
+def runMpTarget(file_list):
+    #counter to keep track of the number of files that have been processed
+    p = 0
+    count = len(file_list)
+    print count, " files to be processed"
+
+    #Run pipeline on each file with it's own output directory in the main output directory
+    query_parameters = []
+    for fasta in file_list:
+        print "Query:", fasta
+        filename = os.path.splitext(fasta)[0]
+        file_name = os.path.split(filename)[1]
+        #set output directory
+        blast_out = os.path.normpath(os.path.join(out_dir, file_name))
+        
+        #set output filename
+        blast_file_out = os.path.join(blast_out, file_name)
+        query_parameters.append([fasta, blast_out, blast_file_out, path])
+    
+    pool = mp.Pool(args.T)
+    target_map = pool.map(runTarget_helper, query_parameters)
+    for target_x in target_map:
+        p += 1
+        print "TARGeT has processed ", p, " of ", count, " subfiles"
+    
     
     
 def standardize_flanks(flank_file_path, index_dict, flank, genome_dict2):
@@ -424,13 +454,15 @@ parser.add_argument("Run_Name", help="Name for overall run")
 
 parser.add_argument("-o", metavar="Output path", default="Current working directory", help="Path to an existing directory for output. A subdirectory for the run will be created with further subdirectories containing the output files for each search sequence.")
 
-parser.add_argument("-i", metavar="Input query type", choices=("s", "mi"), default="s", help="Number of input queries per file(s): s = single query sequence, mi = multiple individual query sequences; All input files/sequences must be the same type of sequence as set by -t.")
+parser.add_argument("-i", metavar="Input query type", choices=("s", "mi", "g"), default="s", help="Number of input queries per file(s): s = single query sequence, mi = multiple individual query sequences, g = FASTA multiple sequence alignment or list of sequences; All input files/sequences must be the same type of sequence as set by -t.")
 
 parser.add_argument("-a", metavar="Alignments to perform", choices=("hits", "flanks", "both"), default="hits", help="Input sequences for multiple sequence alignent: hits = each copy only contains sequence that matches the query (recomended for most protein queries), flanks = each copy contains the sequences that matches the query plus flanking sequence on each side of the match for which the length is set by -p_f ")
 
 parser.add_argument("-f", metavar="Filter length (query length * X)", type=float, default=0, choices=ident_list4, help="Multiple of query length used as maximum length of copies to be included in the multiple sequence alignment(s). Valid values are: 0-10 by 0.01 increments. Default of 0 means no filtering. Values between 0 and 1 return copies smaller than the input query sequence.")
 
 parser.add_argument("-P", metavar="Processors", type=int, default=1, help="The number of processors to use for Blast, Mafft, and FastTree steps. All other steps use 1 processor. The programs are not multi-node ready, so the number of processors is limited to that available to one computer/node.")
+
+parser.add_argument("-T", metavar="Threads", type=int, default=1, help="Use multiple threads to run multiple query searches in parallel. This will only be useful if using either option -d or option -q with option -i = mi. If -T is set, the total number of cpus that will be used by your run will be P*T, i.e. if -P 4 and -T 4, then 16 cpus will be used.")
 
 parser.add_argument("-E", action='store_true', default="False", help="Require hits to match the ends of the query sequence. The -W flag modifies the distance from the ends a hit can be and satisfy this flag. Using this flag alone is equivalent to '-E -W 0'.")
 
@@ -440,7 +472,7 @@ parser.add_argument("-S", metavar="Stopping point", type=str, choices=("Blast", 
 
 parser.add_argument("-DB", action='store_false', default="True", help="Skip formatDB and custom indexing. These steps are required for the first search against a genome. If the genome sequence file is changed in any way, these steps will need to be performed again. Otherwise, you may use this flag to skip these steps. By default, the steps are always performed")
 
-parser.add_argument("-v", action='version', version='TARGeT-2.00', help="Version information")
+parser.add_argument("-v", action='version', version='TARGeT-2.01', help="Version information")
 
 #BLAST arguments
 parser_blast = parser.add_argument_group("BLAST")
@@ -467,7 +499,7 @@ parser_phi.add_argument("-p_n", metavar="Max copies", type=int, default=100, hel
 
 parser_phi.add_argument("-p_R", action='store_true', help="Perform realignments to find small exons.")
 
-parser_phi.add_argument("-p_c", metavar="Composition stats", default="0", choices=('0', '1', '2', '3'), help="Use composition-based statistics during realignment. 0 = off, 1 = use 2001-based stats, 2 = use 2005-based stats cibditioned on sequence properties, 3 = use 2005-based stats unconditionally. See BLAST+ help, man page, or web resources for further explanation.")
+parser_phi.add_argument("-p_c", metavar="Composition stats", default="0", choices=('0', '1', '2', '3'), help="Use composition-based statistics during realignment. 0 = off, 1 = use 2001-based stats, 2 = use 2005-based stats conditioned on sequence properties, 3 = use 2005-based stats unconditionally. See BLAST2 help, man page, or web resources for further explanation.")
 
 parser_phi.add_argument("-p_G", metavar="Add GenBank accession #", default="0", choices=('0', '1'), help="Add GenBank accession numbers. Use only if genome being searched is in GenBank format. 0 = no, 1 = yes.")
 
@@ -571,7 +603,7 @@ if args.q and args.i == 's' or args.i == 'g':
 else:
     out_dir = args.o + args.Run_Name + "_" + now.strftime("%Y_%m_%d_%H%M%S")
     try:
-        subp.call(["mkdir", out_dir])
+        os.mkdir(out_dir)
     except:
         pass
 
@@ -589,7 +621,7 @@ else:
 
 #for single indiviual query or grouped query
 if args.q and args.i == 's' or args.i == 'g':
-    print "Single input file, single input\n"
+    print "Single input file, single or group input\n"
     query = args.q
     try:
         with open(query, "r") as test:
@@ -600,18 +632,15 @@ if args.q and args.i == 's' or args.i == 'g':
     
     #set output filename
     blast_file_out = os.path.join(out_dir, query_name)
-    runTarget(args.q, out_dir, blast_file_out, path)
+    runTarget(query, out_dir, blast_file_out, path)
     print "TARGeT has finished!"
 
 
 #for multiple individual queries-------------------------------------------------
 elif args.q and args.i == 'mi':
     print "Single input file, multiple individual inputs.\n"
-    CURRENT_DIR = os.path.dirname(__file__)
-    file_path = os.path.join(CURRENT_DIR, "split_fasta.py")
-    #subp.call(["python", file_path, args.q])
     
-    seq_list = []
+    new_files = []
     base_path, base_file = os.path.split(args.q)
     base_file = os.path.splitext(base_file)[0]
     c = 1
@@ -622,75 +651,28 @@ elif args.q and args.i == 'mi':
         raise
     for title, seq in fastaIO.FastaTitleStandardization(in_handle):
         seq_path = os.path.join(base_path, title + "_split" + str(c) + ".fa")
+        new_files.append(seq_path)
         out_handle = open(seq_path, "w")
         print>>out_handle, ">" + title, "\n", seq
         c += 1
         out_handle.close()
     in_handle.close()
     
-    #count the number of new input files
-    query_no_ext = os.path.splitext(args.q)[0]
-    basedir, query_name = os.path.split(query_no_ext)
-    new_files = glob.glob(query_no_ext + "_split*.fa")
-    #print "new files:\n", new_files
-    #print str(query_no_ext).strip() + "_split*.fa\n"
-    count = len(new_files)
-    print count, " files to be processed"
-
-    #counter to keep track of the number of files that have been processed
-    p = 0
-
-    #Run pipeline on each file with it's own output directory in the main output directory
-    for fasta2 in new_files:
-        query = fasta2
-        print "Query:", fasta2
-        filename = os.path.splitext(fasta2)[0]
-        file_name = os.path.split(filename)[1]
-        #set output directory
-        blast_out = os.path.normpath(os.path.join(out_dir, file_name))
-        
-        #set output filename
-        blast_file_out = os.path.join(blast_out, file_name)
-        runTarget(fasta2, blast_out, blast_file_out, path)
-        os.unlink(fasta2)
-        p += 1
-        print "TARGeT has processed ", p, " of ", count, " subfiles"
-
+    runMpTarget(new_files)
     print "TARGeT has finished!"
 
 #-----------Directory input------------------------------------------------------
 
 #for single individual queries
 elif args.d and args.i == 's' or args.i == 'g':
-    print "Directory input, each file has a single query.\n"
-    
+    print "Directory input, each file has a single or group query.\n"
     files = os.listdir(args.d) #get all files in the directory
-
-    #count the number of input files
-    count = 0
-    for f in files:
-        count += 1        
-    print count, " files to be processed"
-
-    #counter to keep track of the number of files that have been processed
-    p = 0
- 
-    #Run pipeline on each file with it's own output directory in the main output directory
-    for f in files:
-        query = os.path.normpath(os.path.join(args.d, f))
-        query_name = os.path.split(os.path.splitext(query)[0])[1]
-        blast_out = os.path.normpath(os.path.join(out_dir, query_name)) #output directory
-        blast_file_out = os.path.join(blast_out, query_name) #output files basename
-        runTarget(query, blast_out, blast_file_out, path)
-        p +=1
-        print "TARGeT has processed ", p, " of ", count, " files"
+    runMpTarget(files)
     print "TARGeT has finished!"
 
 #for multiple individual queries-------------------------------------------------
 elif args.d and args.i == 'mi':
     print "Directory input, each file has multiple individual queries.\n"
-    CURRENT_DIR = os.path.dirname(__file__)
-    file_path = os.path.join(CURRENT_DIR, "split_fasta.py")
     
     files = os.listdir(args.d) #get all files in the directory
 
@@ -703,51 +685,26 @@ elif args.d and args.i == 'mi':
 
     #counter to keep track of the number of files that have been processed
     p = 0
-
+    
     for f in files:
         #setup name for output subdirectory for pre-split file
         base_dir = os.path.normpath(os.path.join(out_dir, os.path.splitext(f)[0]))
-        
-        #make the subdirectory
-        subp.call(["mkdir", base_dir])
+        os.mkdir(base_dir)
 
         #setup full path to fasta file for splitting
         in_full = os.path.normpath(os.path.join(args.d, f))
-        in_no_ext = os.path.splitext(in_full)[0]
-        
-        #split the fasta file
-        #subp.call(["python", file_path, in_full])
-        
-        base_path, base_file = os.path.split(args.q)
-        base_file = os.path.splitext(base_file)[0]
-        c = 1
-        in_handle = open(args.q, "r")
+
+        new_files = []
+        in_handle = open(in_full, "r")
         for title, seq in fastaIO.FastaTitleStandardization(in_handle):
-            seq_path = os.path.join(base_path, title + "_split" + str(c) + ".fa")
+            seq_path = os.path.join(base_dir, title + "_split" + str(c) + ".fa")
             out_handle = open(seq_path, "w")
+            new_files.append(seq_path)
             print>>out_handle, ">" + title, "\n", seq
-            c += 1
             out_handle.close()
         in_handle.close()
-
-        #count the number of new input files
-        new_files = glob.glob(in_no_ext + "_split*.fa")
-        count2 = len(new_files)
-        print count2, " subfiles to be processed"
-
-        #setup conter for subfiles processed
-        p2 = 0
-
-        #Run pipeline on each split file, output directory in subdirectory for pre-split file that's in main output directory
-        for fasta2 in new_files:
-            #set query to split file path
-            query = fasta2
-            blast_out = os.path.normpath(os.path.join(base_dir, os.path.split(os.path.splitext(fasta2)[0])[1]))
-            blast_file_out = os.path.normpath(os.path.join(blast_out, os.path.split(fasta2)[1]))
-            runTarget(fasta2, blast_out, blast_file_out, path)
-            os.unlink(fasta2)
-            p2 += 1
-            print "TARGeT has processed ", p2, " of ", count2, " subfiles from file ", p + 1, " of ", count, " files"
-            p += 1
+        
+        runMpTarget(new_files)
+        
         print "TARGeT has fully processed ", p, " of ", count, " files"
     print "TARGeT has finished!"
