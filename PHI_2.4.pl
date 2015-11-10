@@ -1,5 +1,5 @@
-#!/usr/bin/env perl -w
-#use warnings
+#!/usr/bin/env perl
+use warnings;
 # 2010-9-8
 # }elsif($Line=~ /Expect\(\d\)\s+=\s+(\S+)/){ => }elsif($Line=~ /Expect\(\d+\)\s+=\s+(\S+)/){
 
@@ -138,7 +138,7 @@ $Output      = defined $opt_o ? $opt_o : "protein_copies";
 $Help        = defined $opt_h ? $opt_h : "";
 
 
-usuage() if((!$Input)||($Help));
+usage() if((!$Input)||($Help));
 
 
 
@@ -2722,7 +2722,7 @@ close(BF);
 
 #-----------------------------------------------------
 
-sub usuage {
+sub usage {
 
     print "\nHi, need some help?\n";
 
