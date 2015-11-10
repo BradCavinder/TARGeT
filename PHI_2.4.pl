@@ -3706,27 +3706,29 @@ sub E_value_comparison {
 
 	}else{
 
-		if(defined $E2 and $E2 =~ /e-/) {
+		if(defined $E2) {
+            if ($E2 =~ /e-/) {
 
-			$Compare_Result = ">";
-
-		}else{
-
-			if($E1 > $E2) {
-
-				$Compare_Result = ">";
-
-			}elsif($E1 < $E2){
-
-				$Compare_Result = "<";
-
-			}else{
-
-				$Compare_Result = "=";
-
-			}
-
-		}
+                $Compare_Result = ">";
+    
+            }else{
+    
+                if($E1 > $E2) {
+    
+                    $Compare_Result = ">";
+    
+                }elsif($E1 < $E2){
+    
+                    $Compare_Result = "<";
+    
+                }else{
+    
+                    $Compare_Result = "=";
+    
+                }
+    
+            }
+        }
 
 	}
 
