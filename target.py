@@ -325,7 +325,7 @@ def runTarget(query, blast_out, blast_file_out, path):
     else:
         print "Less than two copies found. Multiple alignment and tree building will not be performed.\n"
         
-def runTarget_helper(args):
+def runTarget_expander(args):
     return runTarget(*args)
 
 def runMpTarget(file_list):
@@ -348,12 +348,10 @@ def runMpTarget(file_list):
         query_parameters.append([fasta, blast_out, blast_file_out, path])
     
     pool = mp.Pool(args.T)
-    target_map = pool.map(runTarget_helper, query_parameters)
+    target_map = pool.map(runTarget_expander, query_parameters)
     for target_x in target_map:
         p += 1
         print "TARGeT has processed ", p, " of ", count, " subfiles"
-    
-    
     
 def standardize_flanks(flank_file_path, index_dict, flank, genome_dict2):
     """Find the index position of the start and end of the DNA match in the sequences with flanks. If either flank is not as long as the flank setting, add N's to reach that number. If the index is -1 (not found), go back into the genome sequence to get the correct locus"""
@@ -659,6 +657,8 @@ elif args.q and args.i == 'mi':
     in_handle.close()
     
     runMpTarget(new_files)
+    for item in new_files:
+        os.unlink(item)
     print "TARGeT has finished!"
 
 #-----------Directory input------------------------------------------------------
@@ -668,6 +668,8 @@ elif args.d and args.i == 's' or args.i == 'g':
     print "Directory input, each file has a single or group query.\n"
     files = os.listdir(args.d) #get all files in the directory
     runMpTarget(files)
+    for item in files:
+        os.unlink(item)
     print "TARGeT has finished!"
 
 #for multiple individual queries-------------------------------------------------
@@ -705,6 +707,8 @@ elif args.d and args.i == 'mi':
         in_handle.close()
         
         runMpTarget(new_files)
+        for item in new_files:
+            os.unlink(item)
         
         print "TARGeT has fully processed ", p, " of ", count, " files"
     print "TARGeT has finished!"
