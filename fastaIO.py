@@ -121,12 +121,12 @@ def sequence_retriever(contig, start, end, flank, genome_dict3):
         seq = genome_dict3[contig]
         contig_seq_len = len(seq)
         if int(flank) < int(start):
-            left_coord = (int(start)-int(flank))
+            left_coord = (int(start)-int(flank))-1
         else:
             needed_left = (int(flank) - int(start))
             left_coord = 0
         if (contig_seq_len - int(flank)) >= int(end):
-            right_coord = (int(end+1) + int(flank))
+            right_coord = (int(end) + int(flank))
         else:
             needed_right = int(end) - ((contig_seq_len - int(flank)))
             right_coord = contig_seq_len
@@ -153,10 +153,10 @@ def sequence_retriever2(contig, start, end, left_flank, right_flank, genome_dict
         if int(left_flank) < int(start):
             left_coord = (int(start)-int(left_flank))
         else:
-            needed_left = (int(left_flank) - int(start))
+            needed_left = (int(left_flank) - int(start))-1
             left_coord = 0
         if (contig_seq_len - int(right_flank)) >= int(end):
-            right_coord = (int(end+1) + int(right_flank))
+            right_coord = (int(end) + int(right_flank))
         else:
             needed_right = int(end) - ((contig_seq_len - int(right_flank)))
             right_coord = contig_seq_len
