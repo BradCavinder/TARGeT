@@ -297,7 +297,7 @@ def runTarget(query, blast_out, blast_file_out, path):
                 #print "OMP_NUM_THREADS after change:  ", current_env['OMP_NUM_THREADS'], "\n\n"
 
             
-                if args.Type == 'nucl':
+                if args.Type == 'nucl' or (args.Type == 'prot' and ".flank" in msa_out):
                     proc = subp.Popen(["FastTreeMP", "-nt", "-gamma", "-out", tree_out, msa_out], env = current_env)
                     proc.wait()
                     print "\nFastTreeMP finished.\n"
