@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#!/usr/bin/env perl
 use warnings;
 # build the reads index file 
 # Written by prj03

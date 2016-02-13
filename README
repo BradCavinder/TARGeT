@@ -29,13 +29,26 @@ Installation
 TARGeT itself does not require installation as it consists of Python and Perl scripts that do not need to be compiled or installed. The dependencies above do need to be installed per each program's own instructions, adding them to your PATH manually if needed. TARGeT needs to be run from its own directory, containing the Python and Perl scripts and the BLOSUM matrix files.
 
 
+Usage help
+==========
+The following command (without the single quotation marks) will return a long help message explaining all the options for running TARGeT:
+'python target.py -h' (or just 'target.py -h' if you've added the script to your PATH). Entering only 'python target.py' will return a brief usage statement.
+
+
 Change Log
 ==========
+
+2.10 - 10NOV2015
+   Added parallel processing of multiple queries. Added back option to process multiple queries as a group. Several bugfixes.
+
+2.01 - 28OCT2015 -  Added checks for required prerequisites and existence of input paths.
 
 2.00 - 10JUN2013 - Major update
 
    MAFFT has replaced MUSCLE for multiple sequence alignments, and FastTreeMP is now used for tree building with TreeBest still being used to convert the tree file to an EPS image.
    TARGeT can now use multiple processors for the Blast, MAFFT, and FastTree step, leaving the PHI step as the longest running single processor step. The run times for the remaining single processor steps are generally very short.
+     - AUG2013 through 08OCT2013 - minor updates 
+   Several minor changes were made to improve performance. Version designation being kept at 2.00. Of particular note, queries returning >= 800 hits will be split into ~400 copy groups for multiple sequence alignment.
 
 
 1.1 - 09JUN2013 - Multiple bug fixes. Removed the need for Python packages pyfasta and setuptools.
@@ -43,7 +56,7 @@ Change Log
 
 1.00 - 15APR2012 - Initial release
 
-   Differeces from the web version:
+   Differences from the web version:
     - This version does not yet allow the use of other BLAST options that the web interface allows. Similarly, the -diags option for MUSCLE must currently always be used and the -clwstrict option cannot be used. Other options not implemented in the web version are not implemented here either.
     - Improved the readability of tree images containing high numbers of homologs by increasing the height of the images based on homolog count.
     - The web version allows TARGeT to be stopped after any of the BLAST, PHI, or MUSCLE steps in addition to running the full pipeline. This version only runs the complete pipeline though it will check to see if the BLAST database and custom index files have already been created, skipping either or both steps if they have. It will also check to see if the number of homolgs found by PHI is >1. If not, MUSCLE and TreeBest will not be run.

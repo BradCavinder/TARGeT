@@ -1,5 +1,5 @@
-#!/usr/bin/env perl -w
-#use warnings
+#!/usr/bin/env perl
+use warnings;
 # 2010-9-8
 # }elsif($Line=~ /Expect\(\d\)\s+=\s+(\S+)/){ => }elsif($Line=~ /Expect\(\d+\)\s+=\s+(\S+)/){
 
@@ -138,7 +138,7 @@ $Output      = defined $opt_o ? $opt_o : "protein_copies";
 $Help        = defined $opt_h ? $opt_h : "";
 
 
-usuage() if((!$Input)||($Help));
+usage() if((!$Input)||($Help));
 
 
 
@@ -263,10 +263,13 @@ open(QF, "$Query_File")||die "$!\n";
 while(<QF>) {
 
 	$Line = $_;
+    
+    #print "$Line\n";
 
 	if(/^>(\S+)/) {
 
 		$Name = $1;
+        print "$Line\n";
 
 	}else{
 
@@ -285,7 +288,8 @@ close(QF);
 foreach(keys(%Query_Name_Seq)) {
 
 	$Query_Length{$_} = length($Query_Name_Seq{$_});
-
+    
+    #print "Query length: $Query_Length{$_}\n";
 }
 
 
@@ -541,6 +545,8 @@ foreach(keys(%Query_Sbjct_Matches)) {
 foreach(keys(%Query_Sbjcts)) {  
 
 	$Query = $_;
+    #print "Query print 2: $Query\n";
+    
     $Query_Len = $Query_Length{$Query};
     #if nucleotide search, set max overlap to 25% of query if less than 100
     if($Protein == 0) {
@@ -2114,7 +2120,7 @@ foreach(keys(%Sbjct_Copies)) {
 
 							if(!(defined($Q_L_AAs[$k]))) {
 
-								print "$Query\t$Sbjct\n@Matches\n";
+								#print "$Query\t$Sbjct\n@Matches\n";
 
 								exit(0);
 
@@ -2122,7 +2128,7 @@ foreach(keys(%Sbjct_Copies)) {
 
 							if(!(defined($S_L_AAs[$k]))) {
 
-								print "$Query\t$Sbjct\n@Matches\n";
+								#print "$Query\t$Sbjct\n@Matches\n";
 
 								exit(0);
 
@@ -2158,7 +2164,7 @@ foreach(keys(%Sbjct_Copies)) {
 
 							if(!(defined($Q_R_AAs[$OverlaP_R - $k - 1]))) {
 
-								print "$Query\t$Sbjct\n@Matches\n";
+								#print "$Query\t$Sbjct\n@Matches\n";
 
 								exit(0);
 
@@ -2166,7 +2172,7 @@ foreach(keys(%Sbjct_Copies)) {
 
 							if(!(defined($S_R_AAs[$OverlaP_R - $k - 1]))) {
 
-								print "$Query\t$Sbjct\n@Matches\n";
+								#print "$Query\t$Sbjct\n@Matches\n";
 
 								exit(0);
 
@@ -2716,7 +2722,7 @@ close(BF);
 
 #-----------------------------------------------------
 
-sub usuage {
+sub usage {
 
     print "\nHi, need some help?\n";
 
@@ -3172,9 +3178,9 @@ sub redundancy_match_filter {
 
 						if(!(defined($AA_Score{$Q_AA." ".$S_AA}))) {
 
-							print "$Q_AA. .$S_AA\n";
+							#print "$Q_AA. .$S_AA\n";
 
-							print "$Query, $Sbjct, @Matches, \n $Q_Begin, $Q_End, $S_Begin, $S_End, $Frame\n";
+							#print "$Query, $Sbjct, @Matches, \n $Q_Begin, $Q_End, $S_Begin, $S_End, $Frame\n";
 
 							exit(0);
 
@@ -3700,27 +3706,29 @@ sub E_value_comparison {
 
 	}else{
 
-		if($E2 =~ /e-/) {
+		if(defined $E2) {
+            if ($E2 =~ /e-/) {
 
-			$Compare_Result = ">";
-
-		}else{
-
-			if($E1 > $E2) {
-
-				$Compare_Result = ">";
-
-			}elsif($E1 < $E2){
-
-				$Compare_Result = "<";
-
-			}else{
-
-				$Compare_Result = "=";
-
-			}
-
-		}
+                $Compare_Result = ">";
+    
+            }else{
+    
+                if($E1 > $E2) {
+    
+                    $Compare_Result = ">";
+    
+                }elsif($E1 < $E2){
+    
+                    $Compare_Result = "<";
+    
+                }else{
+    
+                    $Compare_Result = "=";
+    
+                }
+    
+            }
+        }
 
 	}
 
