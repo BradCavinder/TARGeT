@@ -54,10 +54,13 @@ def FastaTitleStandardization(handle):
         title = title.replace("(", "-")
         title = title.replace(")", "-")
         title = title.replace("=", "-")
+        title = title.replace("/", "-")
+        title = title.replace("---", "-")
         title = pattern.sub("_", title)
         title = title.replace('___', '_')
         title = title.replace('__', '_')
         title = title.replace('_-_', '-')
+        title = title.replace("--", "-")
         if len(title) >= 99:
             title = title[:99]
         title = title.replace(" ", "")
